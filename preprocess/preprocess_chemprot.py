@@ -38,6 +38,8 @@ def tokenize_text(doc_id, text, entities, relations):
 		sent_tokens = [token.text for token in sent]
 		for entity_pos, entity in enumerate(sent_entities):
 			entity['sent_id'] = entity_pos
+			entity['sent_start'] = entity['start'] - sent.start_char
+			entity['sent_end'] = entity['end'] - sent.start_char
 
 		sent_relations = set()
 		# TODO consider other orderings
@@ -61,7 +63,6 @@ class SplitReader:
 		abs_path = path / 'abstracts.tsv'
 		entity_path = path / 'entities.tsv'
 		gs_path = path / 'gold_standard.tsv'
-		print(f'Reading split {path}...')
 		# TODO clean up and generalize
 		entities = collections.defaultdict(list)
 		with entity_path.open('r') as f:
@@ -114,8 +115,8 @@ class Sentence:
 		for entity in self.entities:
 			entity_dict = {
 				'type': entity['type'],
-				'start': entity['start'],
-				'end': entity['end']
+				'start': entity['sent_start'],
+				'end': entity['sent_end']
 			}
 			entities.append(entity_dict)
 		relations = []
@@ -145,7 +146,18 @@ if __name__ == '__main__':
 	for split in splits:
 		split_input_path = inputs_path / split
 		split_output_path = (outputs_path / split).with_suffix('.json')
+
+		print(f'Reading split {split_input_path}...')
 		s = SplitReader(split_input_path)
+
+		stats = collections.defaultdict(int)
+		for sentence in s.sentences:
+			stats['entities'] += len(sentence.entities)
+			stats['relations'] += len(sentence.relations)
+
+		for stat, count in stats.items():
+			print(f'{stat}: {count}')
+
 		split_dict = s.to_dict()
 		with split_output_path.open('w') as fp:
 			json.dump(
