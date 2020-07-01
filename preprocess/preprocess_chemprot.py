@@ -120,7 +120,7 @@ class Sentence:
 		relations = []
 		for relation in self.relations:
 			relation_dict = {
-				'type': relation[2]['type'],
+				'type': relation[2],
 				'head': relation[0],
 				'tail': relation[1]
 			}
