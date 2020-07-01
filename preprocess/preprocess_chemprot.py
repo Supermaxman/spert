@@ -98,7 +98,7 @@ class Split:
 				self.sentences.extend(sents)
 
 	def to_dict(self):
-		return self.sentences
+		return [s.to_dict() for s in self.sentences]
 
 
 class Sentence:
