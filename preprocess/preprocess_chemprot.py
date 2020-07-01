@@ -66,7 +66,7 @@ def tokenize_text(doc_id, text, entities, relations):
 
 		for entity in sent_entities:
 			entity['sent_start'] = entity['tokens'][0]
-			entity['sent_end'] = entity['tokens'][-1]
+			entity['sent_end'] = entity['tokens'][-1] + 1
 
 		sent_relations = set()
 		# TODO consider other orderings
