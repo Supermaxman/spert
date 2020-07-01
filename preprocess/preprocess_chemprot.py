@@ -34,12 +34,41 @@ def tokenize_text(doc_id, text, entities, relations):
 	sentences = []
 	doc = nlp(text)
 	for s_idx, sent in enumerate(doc.sents):
-		sent_entities = find_entities(sent.start_char, sent.end_char, entities)
-		sent_tokens = [token.text for token in sent]
+		sent_entities = sorted(find_entities(sent.start_char, sent.end_char, entities), key=lambda x: x['start'])
+		sent_tokens = []
+
 		for entity_pos, entity in enumerate(sent_entities):
 			entity['sent_id'] = entity_pos
-			entity['sent_start'] = entity['start'] - sent.start_char
-			entity['sent_end'] = entity['end'] - sent.start_char
+			entity['sent_char_start'] = entity['start'] - sent.start_char
+			entity['sent_char_end'] = entity['end'] - sent.start_char
+
+		start_entity_idx = 0
+		for token in sent:
+			start = token.idx
+			length = len(token.text)
+			entity_idx = start_entity_idx
+			while entity_idx < len(sent_entities):
+				current_entity = sent_entities[entity_idx]
+				# if span is past token then move to next token and start checking from start_span_idx again forward.
+				if current_entity['sent_char_start'] >= start + length:
+					break
+				# if span end is before token then stop checking span since all further tokens cannot be in span due to
+				# ordering of word piece tokens by start
+				elif current_entity['sent_char_end'] <= start:
+					start_entity_idx += 1
+					entity_idx += 1
+					continue
+				# there must be some overlap between the current span and the current token
+				else:
+					if 'tokens' not in current_entity:
+						current_entity['tokens'] = []
+					current_entity['tokens'].append(len(sent_tokens))
+					entity_idx += 1
+			sent_tokens.append(token.text)
+
+		for entity in sent_entities:
+			entity['sent_start'] = entity['tokens'][0]
+			entity['sent_end'] = entity['tokens'][-1]
 
 		sent_relations = set()
 		# TODO consider other orderings
