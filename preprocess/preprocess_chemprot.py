@@ -39,8 +39,6 @@ def tokenize_text(doc_id, text, entities, relations):
 
 		for entity_pos, entity in enumerate(sent_entities):
 			entity['sent_id'] = entity_pos
-			entity['sent_char_start'] = entity['start'] - sent.start_char
-			entity['sent_char_end'] = entity['end'] - sent.start_char
 
 		start_entity_idx = 0
 		for token in sent:
@@ -50,11 +48,11 @@ def tokenize_text(doc_id, text, entities, relations):
 			while entity_idx < len(sent_entities):
 				current_entity = sent_entities[entity_idx]
 				# if span is past token then move to next token and start checking from start_span_idx again forward.
-				if current_entity['sent_char_start'] >= start + length:
+				if current_entity['start'] >= start + length:
 					break
 				# if span end is before token then stop checking span since all further tokens cannot be in span due to
 				# ordering of word piece tokens by start
-				elif current_entity['sent_char_end'] <= start:
+				elif current_entity['end'] <= start:
 					start_entity_idx += 1
 					entity_idx += 1
 					continue
