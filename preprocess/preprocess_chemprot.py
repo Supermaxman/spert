@@ -43,7 +43,7 @@ def tokenize_text(doc_id, text, entities, relations):
 		# TODO consider other orderings
 		for head, tail in itertools.product(sent_entities, sent_entities):
 			for rel_label in relations[head['id']][tail['id']]:
-				sent_relations.add((head, tail, rel_label))
+				sent_relations.add((head['sent_id'], tail['sent_id'], rel_label))
 		s = Sentence(
 			f'D{doc_id}S{s_idx}',
 			sent_tokens,
@@ -121,8 +121,8 @@ class Sentence:
 		for relation in self.relations:
 			relation_dict = {
 				'type': relation[2]['type'],
-				'head': relation[0]['head'],
-				'tail': relation[1]['tail']
+				'head': relation[0],
+				'tail': relation[1]
 			}
 			relations.append(relation_dict)
 		sent_dict = {
