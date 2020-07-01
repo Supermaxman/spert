@@ -55,12 +55,13 @@ def tokenize_text(doc_id, text, entities, relations):
 	return sentences
 
 
-class Split:
+class SplitReader:
 	def __init__(self, path: Path):
 		self.sentences = []
 		abs_path = path / 'abstracts.tsv'
 		entity_path = path / 'entities.tsv'
 		gs_path = path / 'gold_standard.tsv'
+		print(f'Reading split {path}...')
 		# TODO clean up and generalize
 		entities = collections.defaultdict(list)
 		with entity_path.open('r') as f:
@@ -144,7 +145,7 @@ if __name__ == '__main__':
 	for split in splits:
 		split_input_path = inputs_path / split
 		split_output_path = (outputs_path / split).with_suffix('.json')
-		s = Split(split_input_path)
+		s = SplitReader(split_input_path)
 		split_dict = s.to_dict()
 		with split_output_path.open('w') as fp:
 			json.dump(
