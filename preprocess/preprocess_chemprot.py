@@ -41,7 +41,7 @@ def tokenize_text(doc_id, text, entities, relations):
 
 		sent_relations = set()
 		# TODO consider other orderings
-		for head, tail in itertools.product(sent_entities):
+		for head, tail in itertools.product(sent_entities, sent_entities):
 			for rel_label in relations[head['id']][tail['id']]:
 				sent_relations.add((head, tail, rel_label))
 		s = Sentence(
