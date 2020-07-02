@@ -15,6 +15,9 @@ def fix_types(entity_type):
     return 'Test'
   elif entity_type == 'treatment':
     return 'Treatment'
+  # filler for relation parsing
+  elif entity_type == 'dummy':
+    return 'dummy'
   else:
     raise NotImplementedError(f'Unknown entity type: {entity_type}')
 
