@@ -5,7 +5,7 @@ import json
 from tqdm import tqdm
 import spacy
 
-from spert.preprocess.text import Sentence, Segment, Relation, Entity
+from text_utils import Sentence, Segment, Relation, Entity
 
 
 def fix_types(entity_type):

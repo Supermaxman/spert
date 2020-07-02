@@ -5,7 +5,7 @@ from tqdm import tqdm
 import spacy
 
 
-from spert.preprocess.text import Sentence, Relation, Entity
+from text_utils import Sentence, Relation, Entity
 
 
 def fix_types(entity_type):
