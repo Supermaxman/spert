@@ -72,7 +72,7 @@ def read_sentences(shared_path: Path, path: Path):
       entities[sent_id].append(entity)
       entity_dict[entity.entity_id] = entity
 
-  relations = []
+  relations = collections.defaultdict(list)
   if rel_path.exists():
     with rel_path.open('r') as fp:
       for line in fp:
