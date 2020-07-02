@@ -52,6 +52,12 @@ class Sentence:
 			self.tokens.append(token.text)
 
 		for entity in self.entities:
+			if len(entity.tokens) == 0:
+				print(entity.start)
+				print(entity.end)
+				print(tokens)
+				print([token.idx for token in tokens][0])
+				print([token.idx + len(token.text) for token in tokens][-1])
 			entity.sent_start = entity.tokens[0]
 			entity.sent_end = entity.tokens[-1] + 1
 
