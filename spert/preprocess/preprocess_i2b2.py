@@ -94,7 +94,7 @@ def read_sentences(shared_path: Path, path: Path):
   nlp = spacy.load('en_core_sci_sm', disable=['tagger', 'parser', 'ner', 'textcat'])
   sentences = []
   with path.open('r') as fp:
-    for sent_id, line in tqdm(enumerate(fp)):
+    for sent_id, line in enumerate(fp):
       tokens = nlp(line.strip())
       sentence = Sentence(
         sent_id=f'D{name}S{sent_id}',
@@ -121,8 +121,9 @@ if __name__ == '__main__':
 
     print(f'Reading split {split_input_path}...')
     sentences = []
-    for doc_path in split_input_path.iterdir():
-      sentences = read_sentences(shared_path, split_input_path)
+    for doc_path in tqdm(split_input_path.glob('**/*.txt')):
+      doc_sentences = read_sentences(shared_path, split_input_path)
+      sentences.extend(doc_sentences)
     split_dict = [s.to_dict() for s in sentences]
     stats = collections.defaultdict(int)
     for sentence in sentences:
