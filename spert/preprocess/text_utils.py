@@ -68,8 +68,8 @@ class Sentence:
 		for relation in self.relations:
 			relation_dict = {
 				'type': relation.rel_type,
-				'head': relation.rel_type.head.sent_pos,
-				'tail': relation.rel_type.tail.sent_pos
+				'head': relation.head.sent_pos,
+				'tail': relation.tail.sent_pos
 			}
 			relations.append(relation_dict)
 		sent_dict = {
