@@ -29,7 +29,7 @@ def create_entity(line):
   end = end.split(':')
   sent_id = int(start[0]) - 1
   start = int(start[1])
-  end = int(end[1])
+  end = int(end[1]) + 1
   entity_type = type_info.strip()[3:-1]
   assertion = attr_info.strip()[3:-1]
 
