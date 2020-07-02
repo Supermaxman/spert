@@ -32,7 +32,7 @@ class Sentence:
 		start_entity_idx = 0
 		for token in tokens:
 			start = token.idx
-			length = len(token.text)
+			length = len(token)
 			entity_idx = start_entity_idx
 			while entity_idx < len(self.entities):
 				current_entity = self.entities[entity_idx]

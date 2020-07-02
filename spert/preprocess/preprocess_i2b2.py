@@ -2,7 +2,6 @@ from pathlib import Path
 import collections
 import json
 from tqdm import tqdm
-import spacy
 
 
 from text_utils import Sentence, Relation, Entity
@@ -94,11 +93,14 @@ def read_sentences(shared_path: Path, path: Path):
         # TODO assert head_sent_id == tail_sent_id or skip / log cross-sentence rels
         relations[head_sent_id].append(relation)
 
-  nlp = spacy.load('en_core_sci_sm', disable=['tagger', 'parser', 'ner', 'textcat'])
   sentences = []
   with path.open('r') as fp:
     for sent_id, line in enumerate(fp):
-      tokens = nlp(line.strip())
+      tokens = []
+      for w in line.strip().split(' '):
+        if len(w.strip()) > 0:
+          tokens.append(Token(w, len(tokens)))
+
       sentence = Sentence(
         sent_id=f'D{name}S{sent_id}',
         tokens=tokens,
@@ -108,6 +110,15 @@ def read_sentences(shared_path: Path, path: Path):
       sentences.append(sentence)
 
   return sentences
+
+
+class Token:
+  def __init__(self, text, idx):
+    self.text = text
+    self.idx = idx
+
+  def __len__(self):
+    return 1
 
 
 if __name__ == '__main__':
