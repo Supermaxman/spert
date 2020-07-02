@@ -34,19 +34,27 @@ class Sentence:
 			start = token.idx
 			length = len(token)
 			entity_idx = start_entity_idx
+			print(start)
+			print(length)
+			print(token.text)
 			while entity_idx < len(self.entities):
 				current_entity = self.entities[entity_idx]
+				print(current_entity.start)
+				print(current_entity.end)
 				# if span is past token then move to next token and start checking from start_span_idx again forward.
 				if current_entity.start >= start + length:
+					print('past')
 					break
 				# if span end is before token then stop checking span since all further tokens cannot be in span due to
 				# ordering of word piece tokens by start
 				elif current_entity.end <= start:
+					print('before')
 					start_entity_idx += 1
 					entity_idx += 1
 					continue
 				# there must be some overlap between the current span and the current token
 				else:
+					print('overlap')
 					current_entity.tokens.append(len(self.tokens))
 					entity_idx += 1
 			self.tokens.append(token.text)
