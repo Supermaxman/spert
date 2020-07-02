@@ -122,7 +122,7 @@ if __name__ == '__main__':
     print(f'Reading split {split_input_path}...')
     sentences = []
     for doc_path in tqdm(split_input_path.glob('**/*.txt')):
-      doc_sentences = read_sentences(shared_path, split_input_path)
+      doc_sentences = read_sentences(shared_path, doc_path)
       sentences.extend(doc_sentences)
     split_dict = [s.to_dict() for s in sentences]
     stats = collections.defaultdict(int)
