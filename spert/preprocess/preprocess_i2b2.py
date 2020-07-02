@@ -100,12 +100,14 @@ def read_sentences(shared_path: Path, path: Path):
       for w in line.strip().split(' '):
         if len(w.strip()) > 0:
           tokens.append(Token(w, len(tokens)))
+      sent_entities = sorted(entities[sent_id], key=lambda x: x.start)
+      sent_rels = sorted(relations[sent_id], key=lambda x: x.head.start)
 
       sentence = Sentence(
         sent_id=f'D{name}S{sent_id}',
         tokens=tokens,
-        entities=entities[sent_id],
-        relations=relations[sent_id]
+        entities=sent_entities,
+        relations=sent_rels
       )
       sentences.append(sentence)
 
