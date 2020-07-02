@@ -105,7 +105,7 @@ def read_sentences(shared_path: Path, path: Path):
         entities=entities[sent_id],
         relations=relations[sent_id]
       )
-      sentences.extend(sentence)
+      sentences.append(sentence)
 
   return sentences
 
