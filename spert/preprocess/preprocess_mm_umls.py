@@ -150,7 +150,7 @@ if __name__ == '__main__':
   for split in splits:
     split_input_path = inputs_path / split_files[split]
     with split_input_path.open('r') as f:
-      split_ids = set(f.readlines())
+      split_ids = set([x.strip() for x in f])
 
     split_output_path = (outputs_path / split).with_suffix('.json')
 
