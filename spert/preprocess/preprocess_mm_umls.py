@@ -11,52 +11,46 @@ from . import umls
 
 
 def read_sentences(path: Path, nlp, umls_rel_lookup):
-  name = path.name.replace('.txt', '')
-  ann_path = path.with_suffix('.ann')
-
-  entities = []
-  entity_dict = {}
-  umls_entity_dict = {}
-  with ann_path.open('r') as fp:
-    lines = [text.strip() for text in fp]
-    entity_lines = [text for text in lines if text.startswith('T')]
-    umls_lines = [text for text in lines if text.startswith('#')]
-    for line in entity_lines:
-      # T<entity_id> \TAB Concept \SPACE <start> \SPACE <end> \TAB <text>
-      entity_id, entity_info, _ = line.strip().split('\t')
-      entity_id = entity_id[1:]
-      # all entities will have entity type "Concept" for now
-      entity_type, start, end = entity_info.split()
-      entity = text_utils.Entity(
-        entity_id=entity_id,
-        entity_type=entity_type,
-        start=int(start),
-        end=int(end),
-      )
-      entity_dict[entity_id] = entity
-      entities.append(entity)
-    for line in umls_lines:
-      # #<entity_id> \TAB AnnotatorNotes \SPACE T<entity_id> \TAB <CUI>--<UMLS_TYPES_CSV_LIST>
-      _, entity_id, umls_info = line.strip().split('\t')
-      entity_id = entity_id.split()[1][1:]
-      umls_cui, umls_types = umls_info.split('--')
-      umls_types = umls_types.split(',')
-      entity = entity_dict[entity_id]
-      entity.umls_cui = umls_cui
-      entity.umls_types = umls_types
-      umls_entity_dict[entity.umls_cui] = entity
-
   sentences = []
-  with path.open('r') as f:
-    text = f.read().strip()
-    seg = nlp(text)
-    doc = text_utils.Segment(
-      seg_id=name,
-      entities=entities,
-      relations=[],
-      sentences=seg.sents
-    )
-    sentences.extend(doc.sentences)
+  with path.open('r') as fp:
+    doc_id = None
+    title = None
+    text = None
+    entities = []
+    for line in fp:
+      line = line.strip()
+      if not line:
+        seg = nlp(f'{title}. {text}')
+        doc = text_utils.Segment(
+          seg_id=doc_id,
+          entities=entities,
+          relations=[],
+          sentences=seg.sents
+        )
+        sentences.extend(doc.sentences)
+        doc_id = None
+        title = None
+        text = None
+        entities = []
+      else:
+        if title is None:
+          doc_id, _, title = line.split('|')
+          title = title.strip()
+        elif text is None:
+          doc_id, _, text = line.split('|')
+          text = text.strip()
+        else:
+          doc_id, start, end, _, umls_types, umls_cui = line.split('\t')
+          entity = text_utils.Entity(
+            entity_id=len(entities),
+            entity_type='Concept',
+            start=int(start),
+            end=int(end),
+          )
+          umls_types = umls_types.split(',')
+          entity.umls_cui = umls_cui
+          entity.umls_types = umls_types
+          entities.append(entity)
 
   for sentence in sentences:
     for head, tail in itertools.product(sentence.entities, sentence.entities):
@@ -112,7 +106,8 @@ def read_umls_rel_lookup(path):
 
 
 if __name__ == '__main__':
-  inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/brat/')
+  inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/')
+
   outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/json')
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
@@ -123,20 +118,28 @@ if __name__ == '__main__':
   umls_rel_lookup = read_umls_rel_lookup(umls_path)
 
   splits = ['train', 'dev', 'test']
+  split_files = {
+    'train': 'corpus_pubtator_pmids_trng.txt',
+    'dev': 'corpus_pubtator_pmids_dev.txt',
+    'test': 'corpus_pubtator_pmids_test.txt'
+  }
   if not outputs_path.exists():
     outputs_path.mkdir()
 
+  print('Reading full dataset...')
+  all_sentences = read_sentences(inputs_path / 'corpus_pubtator.txt', nlp, umls_rel_lookup)
+
   for split in splits:
-    split_input_path = inputs_path / split
+    split_input_path = inputs_path / split_files[split]
+    with split_input_path.open('r') as f:
+      split_ids = set(f.readlines())
+
     split_output_path = (outputs_path / split).with_suffix('.json')
 
-    print(f'Reading split {split_input_path}...')
-    sentences = []
-    for doc_path in tqdm(split_input_path.glob('**/*.txt')):
-      doc_sentences = read_sentences(doc_path, nlp, umls_rel_lookup)
-      sentences.extend(doc_sentences)
+    print(f'Reading split {split}...')
+    sentences = [sentence for sentence in all_sentences if sentence.sent_id.split('S')[0][1:] in split_ids]
     split_dict = [s.to_dict() for s in sentences]
-    stats = collections.defaultdict(int)
+    stats = collections.Counter()
     for sentence in sentences:
       stats['entities'] += len(sentence.entities)
       for entity in sentence.entities:
@@ -145,7 +148,7 @@ if __name__ == '__main__':
       for relation in sentence.relations:
         stats[relation.rel_type] += 1
 
-    for stat, count in stats.items():
+    for stat, count in stats.most_common():
       print(f'{stat}: {count}')
 
     with split_output_path.open('w') as fp:
