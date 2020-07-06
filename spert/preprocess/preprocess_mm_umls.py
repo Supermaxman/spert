@@ -10,7 +10,7 @@ from . import umls_reader
 from . import umls
 
 
-def read_sentences(path: Path, umls_rel_lookup):
+def read_sentences(path: Path, nlp, umls_rel_lookup):
   name = path.name.replace('.txt', '')
   ann_path = path.with_suffix('.ann')
 
@@ -45,9 +45,6 @@ def read_sentences(path: Path, umls_rel_lookup):
       entity.umls_cui = umls_cui
       entity.umls_types = umls_types
       umls_entity_dict[entity.umls_cui] = entity
-
-  nlp = spacy.load('en_core_sci_sm', disable=['tagger', 'parser', 'ner', 'textcat'])
-  nlp.add_pipe(nlp.create_pipe('sentencizer'))
 
   sentences = []
   with path.open('r') as f:
@@ -119,6 +116,9 @@ if __name__ == '__main__':
   outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/json')
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
+  nlp = spacy.load('en_core_sci_sm', disable=['tagger', 'parser', 'ner', 'textcat'])
+  nlp.add_pipe(nlp.create_pipe('sentencizer'))
+
   print('Reading umls rels...')
   umls_rel_lookup = read_umls_rel_lookup(umls_path)
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     print(f'Reading split {split_input_path}...')
     sentences = []
     for doc_path in tqdm(split_input_path.glob('**/*.txt')):
-      doc_sentences = read_sentences(doc_path, umls_rel_lookup)
+      doc_sentences = read_sentences(doc_path, nlp, umls_rel_lookup)
       sentences.extend(doc_sentences)
     split_dict = [s.to_dict() for s in sentences]
     stats = collections.defaultdict(int)
