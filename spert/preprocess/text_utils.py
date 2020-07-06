@@ -55,10 +55,13 @@ class Sentence:
 			if len(entity.tokens) == 0:
 				print(entity.start)
 				print(entity.end)
+				print(entity.start - tokens[0].idx)
+				print(entity.end - tokens[0].idx)
 				print(tokens)
 				print([token.text for token in tokens])
 				print([token.idx for token in tokens][0])
 				print([token.idx + len(token) for token in tokens][-1])
+				print([(token.idx - tokens[0].idx, token.idx + len(token) - tokens[0].idx) for token in tokens])
 			entity.sent_start = entity.tokens[0]
 			entity.sent_end = entity.tokens[-1] + 1
 
