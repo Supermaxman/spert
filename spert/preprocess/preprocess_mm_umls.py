@@ -130,10 +130,10 @@ if __name__ == '__main__':
   nlp = spacy.load('en_core_sci_sm', disable=['tagger', 'parser', 'ner', 'textcat'])
   nlp.add_pipe(nlp.create_pipe('sentencizer'))
 
-  # print('Reading umls rels...')
-  # umls_rel_lookup = read_umls_rel_lookup(umls_path)
-  print('WARNING: Skipping umls relations for debugging')
-  umls_rel_lookup = collections.defaultdict(list)
+  print('Reading umls rels...')
+  umls_rel_lookup = read_umls_rel_lookup(umls_path)
+  # print('WARNING: Skipping umls relations for debugging')
+  # umls_rel_lookup = collections.defaultdict(list)
 
   splits = ['train', 'dev', 'test']
   split_files = {
