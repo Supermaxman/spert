@@ -66,14 +66,15 @@ def read_sentences(path: Path, umls_rel_lookup):
       # ignore reflexive relations,
       # but allow reflexive cui relations, just not same mention
       if head != tail:
-        rel_type = umls_rel_lookup[(head.umls_cui, tail.umls_cui)]
-        if rel_type is not None:
-          relation = text_utils.Relation(
-            head=head,
-            tail=tail,
-            rel_type=rel_type
-          )
-          sentence.relations.append(relation)
+        rel_types = umls_rel_lookup[(head.umls_cui, tail.umls_cui)]
+        if len(rel_types) > 0:
+          for rel_type in rel_types:
+            relation = text_utils.Relation(
+              head=head,
+              tail=tail,
+              rel_type=rel_type
+            )
+            sentence.relations.append(relation)
 
   return sentences
 
@@ -101,7 +102,7 @@ def read_umls_rel_lookup(path):
     #   return False
     return True
 
-  lookup = collections.defaultdict(None)
+  lookup = collections.defaultdict(list)
   rel_iter = umls_reader.read_umls(
     path,
     umls.UmlsRelation,
@@ -109,7 +110,7 @@ def read_umls_rel_lookup(path):
   )
   for rel in rel_iter:
     # TODO consider types including rela for more detailed relation types
-    lookup[(rel.cui2, rel.cui1)] = rel.rel
+    lookup[(rel.cui2, rel.cui1)].append(rel.rel)
   return lookup
 
 
