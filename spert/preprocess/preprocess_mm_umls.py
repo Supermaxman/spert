@@ -51,11 +51,11 @@ def read_sentences(path: Path, nlp, umls_rel_lookup):
           start = int(start)
           end = int(end)
           # if this entity is not from the title then we need to add 2 to
-          # start and end char positions since we added a period and space
+          # start and end char positions since we added a period
           # to concatenate the title to the document.
           if start >= len(title):
-            start += 2
-            end += 2
+            start += 1
+            end += 1
 
           entity = text_utils.Entity(
             entity_id=len(entities),
