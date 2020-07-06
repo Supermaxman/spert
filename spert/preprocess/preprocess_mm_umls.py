@@ -34,10 +34,17 @@ def read_sentences(path: Path, nlp, umls_rel_lookup):
         entities = []
       else:
         if title is None:
-          doc_id, _, title = line.split('|')
+          # doc_id, _, title
+          segs = line.split('|')
+          doc_id = segs[0]
+          title = '|'.join(segs[2:])
           title = title.strip()
         elif text is None:
-          doc_id, _, text = line.split('|')
+          segs = line.split('|')
+          doc_id = segs[0]
+          # might be | in text so just in case we rejoin
+          text = '|'.join(segs[2:])
+
           text = text.strip()
         else:
           doc_id, start, end, _, umls_types, umls_cui = line.split('\t')
@@ -114,8 +121,10 @@ if __name__ == '__main__':
   nlp = spacy.load('en_core_sci_sm', disable=['tagger', 'parser', 'ner', 'textcat'])
   nlp.add_pipe(nlp.create_pipe('sentencizer'))
 
-  print('Reading umls rels...')
-  umls_rel_lookup = read_umls_rel_lookup(umls_path)
+  # print('Reading umls rels...')
+  # umls_rel_lookup = read_umls_rel_lookup(umls_path)
+  print('WARNING: Skipping umls relations for debugging')
+  umls_rel_lookup = collections.defaultdict(list)
 
   splits = ['train', 'dev', 'test']
   split_files = {
