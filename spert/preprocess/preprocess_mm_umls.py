@@ -24,10 +24,11 @@ def read_sentences(path: Path, umls_rel_lookup):
     for line in entity_lines:
       # T<entity_id> \TAB Concept \SPACE <start> \SPACE <end> \TAB <text>
       entity_id, entity_info, _ = line.strip().split('\t')
+      entity_id = entity_id[1:]
       # all entities will have entity type "Concept" for now
       entity_type, start, end = entity_info.split()
       entity = text_utils.Entity(
-        entity_id=entity_id[1:],
+        entity_id=entity_id,
         entity_type=entity_type,
         start=int(start),
         end=int(end),
