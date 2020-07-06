@@ -57,6 +57,8 @@ class Sentence:
 				print(entity.end)
 				print(entity.start - tokens[0].idx)
 				print(entity.end - tokens[0].idx)
+
+				print(' '.join([token.text for token in tokens])[entity.start - tokens[0].idx:entity.end - tokens[0].idx])
 				print(tokens)
 				print([token.text for token in tokens])
 				print([token.idx for token in tokens][0])
