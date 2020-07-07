@@ -108,7 +108,7 @@ def read_umls_rel_lookup(path):
     # if x.rel == 'RB':
     #   return False
     # too few
-    if x.rel == 'SY':
+    if x.rel == 'SY' or x.rel == 'AQ' or x.rel == 'QB':
       return False
     return True
 
