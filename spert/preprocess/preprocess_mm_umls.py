@@ -56,14 +56,14 @@ def read_sentences(path: Path, nlp, umls_rel_lookup):
           if start >= len(title):
             start += 1
             end += 1
-
+          umls_type = umls_types.split(',')[0]
+          umls_cui = umls_cui.replace('UMLS:', '')
           entity = text_utils.Entity(
             entity_id=len(entities),
-            entity_type='Concept',
+            entity_type=umls_type,
             start=int(start),
             end=int(end),
           )
-          umls_types = umls_types.split(',')
           entity.umls_cui = umls_cui
           entity.umls_types = umls_types
           entities.append(entity)
@@ -107,6 +107,9 @@ def read_umls_rel_lookup(path):
     # # too vague
     # if x.rel == 'RB':
     #   return False
+    # too few
+    if x.rel == 'SY':
+      return False
     return True
 
   lookup = collections.defaultdict(list)
@@ -122,9 +125,9 @@ def read_umls_rel_lookup(path):
 
 
 if __name__ == '__main__':
-  inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/')
+  inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/')
 
-  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/json')
+  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json')
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
   nlp = spacy.load('en_core_sci_sm', disable=['tagger', 'parser', 'ner', 'textcat'])
