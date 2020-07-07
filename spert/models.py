@@ -34,8 +34,9 @@ class SpERT(BertPreTrainedModel):
         self.bert = BertModel(config)
 
         # layers
-        self.rel_classifier = nn.Linear(config.hidden_size * 3 + size_embedding * 2, relation_types)
-        self.entity_classifier = nn.Linear(config.hidden_size * 2 + size_embedding, entity_types)
+        # TODO rename these for pre-training so loading does not have name issues
+        self.rel_layer = nn.Linear(config.hidden_size * 3 + size_embedding * 2, relation_types)
+        self.entity_layer = nn.Linear(config.hidden_size * 2 + size_embedding, entity_types)
         self.size_embeddings = nn.Embedding(100, size_embedding)
         self.dropout = nn.Dropout(prop_drop)
 
@@ -69,7 +70,7 @@ class SpERT(BertPreTrainedModel):
         # classify relations
         h_large = h.unsqueeze(1).repeat(1, max(min(relations.shape[1], self._max_pairs), 1), 1, 1)
         rel_clf = torch.zeros([batch_size, relations.shape[1], self._relation_types]).to(
-            self.rel_classifier.weight.device)
+            self.rel_layer.weight.device)
 
         # obtain relation logits
         # chunk processing to reduce memory usage
@@ -101,7 +102,7 @@ class SpERT(BertPreTrainedModel):
         rel_sample_masks = rel_sample_masks.float().unsqueeze(-1)
         h_large = h.unsqueeze(1).repeat(1, max(min(relations.shape[1], self._max_pairs), 1), 1, 1)
         rel_clf = torch.zeros([batch_size, relations.shape[1], self._relation_types]).to(
-            self.rel_classifier.weight.device)
+            self.rel_layer.weight.device)
 
         # obtain relation logits
         # chunk processing to reduce memory usage
@@ -135,7 +136,7 @@ class SpERT(BertPreTrainedModel):
         entity_repr = self.dropout(entity_repr)
 
         # classify entity candidates
-        entity_clf = self.entity_classifier(entity_repr)
+        entity_clf = self.entity_layer(entity_repr)
 
         return entity_clf, entity_spans_pool
 
@@ -171,7 +172,7 @@ class SpERT(BertPreTrainedModel):
         rel_repr = self.dropout(rel_repr)
 
         # classify relation candidates
-        chunk_rel_logits = self.rel_classifier(rel_repr)
+        chunk_rel_logits = self.rel_layer(rel_repr)
         return chunk_rel_logits
 
     def _filter_spans(self, entity_clf, entity_spans, entity_sample_masks, ctx_size):
@@ -211,7 +212,7 @@ class SpERT(BertPreTrainedModel):
                 batch_rel_sample_masks.append(torch.tensor(sample_masks, dtype=torch.bool))
 
         # stack
-        device = self.rel_classifier.weight.device
+        device = self.rel_layer.weight.device
         batch_relations = util.padded_stack(batch_relations).to(device)
         batch_rel_masks = util.padded_stack(batch_rel_masks).to(device)
         batch_rel_sample_masks = util.padded_stack(batch_rel_sample_masks).to(device)
