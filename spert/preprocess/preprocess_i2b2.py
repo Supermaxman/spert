@@ -39,7 +39,7 @@ def create_entity(line):
     start=start,
     end=end,
   )
-  entity.assertion = assertion
+  entity.extra['assertion'] = assertion
 
   return entity, sent_id
 
@@ -125,7 +125,7 @@ class Token:
 
 if __name__ == '__main__':
   inputs_path = Path('/users/max/data/corpora/i2b2/2010/split')
-  outputs_path = Path('/users/max/data/corpora/i2b2/2010/json')
+  outputs_path = Path('/users/max/data/corpora/i2b2/2010/json2')
   shared_path = inputs_path / 'all'
   splits = ['train', 'dev', 'test']
   if not outputs_path.exists():

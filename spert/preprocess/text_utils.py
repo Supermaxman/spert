@@ -75,6 +75,8 @@ class Sentence:
 				'start': entity.sent_start,
 				'end': entity.sent_end
 			}
+			for key, value in entity.extra.items():
+				entity_dict[key] = value
 			entities.append(entity_dict)
 		relations = []
 		for relation in self.relations:
@@ -83,6 +85,8 @@ class Sentence:
 				'head': relation.head.sent_pos,
 				'tail': relation.tail.sent_pos
 			}
+			for key, value in relation.extra.items():
+				relation_dict[key] = value
 			relations.append(relation_dict)
 		sent_dict = {
 			'tokens': self.tokens,
@@ -118,6 +122,7 @@ class Relation:
 		self.head = head
 		self.tail = tail
 		self.rel_type = rel_type
+		self.extra = {}
 
 
 class Entity:
@@ -126,3 +131,4 @@ class Entity:
 		self.entity_type = entity_type
 		self.start = start
 		self.end = end
+		self.extra = {}
