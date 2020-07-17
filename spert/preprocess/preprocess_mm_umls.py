@@ -127,8 +127,8 @@ def read_umls_rel_lookup(path, keep_rels):
 
 
 if __name__ == '__main__':
-  inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/')
-  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/json2')
+  inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/')
+  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json2')
 
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
