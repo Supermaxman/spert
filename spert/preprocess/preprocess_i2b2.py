@@ -145,6 +145,8 @@ if __name__ == '__main__':
     for sentence in sentences:
       stats['entities'] += len(sentence.entities)
       stats['relations'] += len(sentence.relations)
+      for entity in sentence.entities:
+        stats[entity.extra['assertion']] += 1
 
     for stat, count in stats.items():
       print(f'{stat}: {count}')
