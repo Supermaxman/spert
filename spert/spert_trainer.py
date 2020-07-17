@@ -75,16 +75,19 @@ class SpERTTrainer(BaseTrainer):
         util.check_version(config, model_class, self.args.model_path)
 
         config.spert_version = model_class.VERSION
-        model = model_class.from_pretrained(self.args.model_path,
-                                            config=config,
-                                            # SpERT model parameters
-                                            cls_token=self._tokenizer.convert_tokens_to_ids('[CLS]'),
-                                            relation_types=input_reader.relation_type_count - 1,
-                                            entity_types=input_reader.entity_type_count,
-                                            max_pairs=self.args.max_pairs,
-                                            prop_drop=self.args.prop_drop,
-                                            size_embedding=self.args.size_embedding,
-                                            freeze_transformer=self.args.freeze_transformer)
+        model = model_class.from_pretrained(
+          self.args.model_path,
+          config=config,
+          # SpERT model parameters
+          cls_token=self._tokenizer.convert_tokens_to_ids('[CLS]'),
+          relation_types=input_reader.relation_type_count - 1,
+          entity_types=input_reader.entity_type_count,
+          max_pairs=self.args.max_pairs,
+          prop_drop=self.args.prop_drop,
+          size_embedding=self.args.size_embedding,
+          freeze_transformer=self.args.freeze_transformer,
+          pre_train=self.args.pre_train
+        )
 
         # SpERT is currently optimized on a single GPU and not thoroughly tested in a multi GPU setup
         # If you still want to train SpERT on multiple GPUs, uncomment the following lines
@@ -152,16 +155,19 @@ class SpERTTrainer(BaseTrainer):
         config = BertConfig.from_pretrained(self.args.model_path, cache_dir=self.args.cache_path)
         util.check_version(config, model_class, self.args.model_path)
 
-        model = model_class.from_pretrained(self.args.model_path,
-                                            config=config,
-                                            # SpERT model parameters
-                                            cls_token=self._tokenizer.convert_tokens_to_ids('[CLS]'),
-                                            relation_types=input_reader.relation_type_count - 1,
-                                            entity_types=input_reader.entity_type_count,
-                                            max_pairs=self.args.max_pairs,
-                                            prop_drop=self.args.prop_drop,
-                                            size_embedding=self.args.size_embedding,
-                                            freeze_transformer=self.args.freeze_transformer)
+        model = model_class.from_pretrained(
+          self.args.model_path,
+          config=config,
+          # SpERT model parameters
+          cls_token=self._tokenizer.convert_tokens_to_ids('[CLS]'),
+          relation_types=input_reader.relation_type_count - 1,
+          entity_types=input_reader.entity_type_count,
+          max_pairs=self.args.max_pairs,
+          prop_drop=self.args.prop_drop,
+          size_embedding=self.args.size_embedding,
+          freeze_transformer=self.args.freeze_transformer,
+          pre_train=self.args.pre_train
+        )
 
         model.to(self._device)
 

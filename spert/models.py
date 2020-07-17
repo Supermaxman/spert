@@ -27,16 +27,24 @@ class SpERT(BertPreTrainedModel):
     VERSION = '1.1'
 
     def __init__(self, config: BertConfig, cls_token: int, relation_types: int, entity_types: int,
-                 size_embedding: int, prop_drop: float, freeze_transformer: bool, max_pairs: int = 100):
+                 size_embedding: int, prop_drop: float, freeze_transformer: bool, max_pairs: int = 100,
+                 pre_train: bool = False):
         super(SpERT, self).__init__(config)
 
         # BERT model
         self.bert = BertModel(config)
+        self._pre_train = pre_train
 
+        rel_layer = nn.Linear(config.hidden_size * 3 + size_embedding * 2, relation_types)
+        entity_layer = nn.Linear(config.hidden_size * 2 + size_embedding, entity_types)
         # layers
-        # TODO rename these for pre-training so loading does not have name issues
-        self.rel_layer = nn.Linear(config.hidden_size * 3 + size_embedding * 2, relation_types)
-        self.entity_layer = nn.Linear(config.hidden_size * 2 + size_embedding, entity_types)
+        # rename these for pre-training so loading does not have name issues
+        if self._pre_train:
+            self.pre_train_rel_layer = rel_layer
+            self.pre_train_entity_layer = entity_layer
+        else:
+            self.rel_layer = rel_layer
+            self.entity_layer = entity_layer
         self.size_embeddings = nn.Embedding(100, size_embedding)
         self.dropout = nn.Dropout(prop_drop)
 
@@ -55,6 +63,18 @@ class SpERT(BertPreTrainedModel):
             for param in self.bert.parameters():
                 param.requires_grad = False
 
+    def _rel_layer(self):
+        if self._pre_train:
+            return self.pre_train_rel_layer
+        else:
+            return self.rel_layer
+
+    def _entity_layer(self):
+        if self._pre_train:
+            return self.pre_train_entity_layer
+        else:
+            return self.entity_layer
+
     def _forward_train(self, encodings: torch.tensor, context_masks: torch.tensor, entity_masks: torch.tensor,
                        entity_sizes: torch.tensor, relations: torch.tensor, rel_masks: torch.tensor):
         # get contextualized token embeddings from last transformer layer
@@ -70,7 +90,7 @@ class SpERT(BertPreTrainedModel):
         # classify relations
         h_large = h.unsqueeze(1).repeat(1, max(min(relations.shape[1], self._max_pairs), 1), 1, 1)
         rel_clf = torch.zeros([batch_size, relations.shape[1], self._relation_types]).to(
-            self.rel_layer.weight.device)
+            self._rel_layer().weight.device)
 
         # obtain relation logits
         # chunk processing to reduce memory usage
@@ -102,7 +122,7 @@ class SpERT(BertPreTrainedModel):
         rel_sample_masks = rel_sample_masks.float().unsqueeze(-1)
         h_large = h.unsqueeze(1).repeat(1, max(min(relations.shape[1], self._max_pairs), 1), 1, 1)
         rel_clf = torch.zeros([batch_size, relations.shape[1], self._relation_types]).to(
-            self.rel_layer.weight.device)
+            self._rel_layer().weight.device)
 
         # obtain relation logits
         # chunk processing to reduce memory usage
@@ -136,7 +156,7 @@ class SpERT(BertPreTrainedModel):
         entity_repr = self.dropout(entity_repr)
 
         # classify entity candidates
-        entity_clf = self.entity_layer(entity_repr)
+        entity_clf = self._entity_layer()(entity_repr)
 
         return entity_clf, entity_spans_pool
 
@@ -172,7 +192,7 @@ class SpERT(BertPreTrainedModel):
         rel_repr = self.dropout(rel_repr)
 
         # classify relation candidates
-        chunk_rel_logits = self.rel_layer(rel_repr)
+        chunk_rel_logits = self._rel_layer()(rel_repr)
         return chunk_rel_logits
 
     def _filter_spans(self, entity_clf, entity_spans, entity_sample_masks, ctx_size):
@@ -212,7 +232,7 @@ class SpERT(BertPreTrainedModel):
                 batch_rel_sample_masks.append(torch.tensor(sample_masks, dtype=torch.bool))
 
         # stack
-        device = self.rel_layer.weight.device
+        device = self._rel_layer().weight.device
         batch_relations = util.padded_stack(batch_relations).to(device)
         batch_rel_masks = util.padded_stack(batch_rel_masks).to(device)
         batch_rel_sample_masks = util.padded_stack(batch_rel_sample_masks).to(device)

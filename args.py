@@ -47,6 +47,8 @@ def _add_common_args(arg_parser):
     arg_parser.add_argument('--seed', type=int, default=None, help="Seed")
     arg_parser.add_argument('--cache_path', type=str, default=None,
                             help="Path to cache transformer models (for HuggingFace transformers library)")
+    arg_parser.add_argument('--pre_train', action='store_true', default=False,
+                            help="If true, modify architecture for pre-training to avoid variable name overlap.")
 
 
 def train_argparser():
