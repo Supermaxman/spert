@@ -86,7 +86,7 @@ def read_sentences(path: Path, nlp, umls_rel_lookup):
   return sentences
 
 
-def read_umls_rel_lookup(path):
+def read_umls_rel_lookup(path, keep_rels):
   def umls_rel_filter(x):
     # remove reflexive relations
     if x.cui2 == x.cui1:
@@ -110,6 +110,8 @@ def read_umls_rel_lookup(path):
     # too few
     if x.rel == 'SY' or x.rel == 'AQ' or x.rel == 'QB':
       return False
+    if x.rel not in keep_rels:
+      return False
     return True
 
   lookup = collections.defaultdict(list)
@@ -125,18 +127,20 @@ def read_umls_rel_lookup(path):
 
 
 if __name__ == '__main__':
-  inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/')
+  inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/')
+  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/full/data/json2')
 
-  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json')
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
   nlp = spacy.load('en_core_sci_sm', disable=['tagger', 'parser', 'ner', 'textcat'])
   nlp.add_pipe(nlp.create_pipe('sentencizer'))
 
   print('Reading umls rels...')
-  umls_rel_lookup = read_umls_rel_lookup(umls_path)
-  # print('WARNING: Skipping umls relations for debugging')
-  # umls_rel_lookup = collections.defaultdict(list)
+  with (outputs_path / 'types.json').open('r') as f:
+    type_info = json.load(f)
+    keep_rels = set(type_info['relations'].keys())
+  print(f'Keep rel types: {keep_rels}')
+  umls_rel_lookup = read_umls_rel_lookup(umls_path, keep_rels)
 
   splits = ['train', 'dev', 'test']
   split_files = {
