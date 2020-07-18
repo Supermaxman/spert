@@ -10,7 +10,7 @@ from . import umls_reader
 from . import umls
 
 
-def read_sentences(path: Path, nlp, umls_rel_lookup, keep_entity_types):
+def read_sentences(path: Path, nlp, umls_rel_lookup, keep_entity_types, skip_zero_entities, skip_zero_rels):
   sentences = []
   with path.open('r') as fp:
     doc_id = None
@@ -83,6 +83,14 @@ def read_sentences(path: Path, nlp, umls_rel_lookup, keep_entity_types):
           )
           sentence.relations.append(relation)
 
+  filtered_sentences = []
+  for sentence in sentences:
+    if skip_zero_entities and len(sentence.entities) == 0:
+      continue
+    if skip_zero_rels and len(sentence.relations) == 0:
+      continue
+    filtered_sentences.append(sentence)
+
   return sentences
 
 
@@ -151,8 +159,17 @@ if __name__ == '__main__':
   if not outputs_path.exists():
     outputs_path.mkdir()
 
+  skip_zero_entities = False
+  skip_zero_rels = False
   print('Reading full dataset...')
-  all_sentences = read_sentences(inputs_path / 'corpus_pubtator.txt', nlp, umls_rel_lookup, keep_entity_types)
+  all_sentences = read_sentences(
+    inputs_path / 'corpus_pubtator.txt',
+    nlp,
+    umls_rel_lookup,
+    keep_entity_types,
+    skip_zero_entities,
+    skip_zero_rels
+  )
 
   for split in splits:
     split_input_path = inputs_path / split_files[split]
@@ -170,6 +187,8 @@ if __name__ == '__main__':
       for entity in sentence.entities:
         stats[entity.entity_type] += 1
       stats['relations'] += len(sentence.relations)
+      stats['has_entities'] += 1 if len(sentence.entities) > 0 else 0
+      stats['has_relations'] += 1 if len(sentence.relations) > 0 else 0
       for relation in sentence.relations:
         stats[relation.rel_type] += 1
 
