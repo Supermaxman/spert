@@ -136,7 +136,7 @@ def read_umls_rel_lookup(path, keep_rel_types):
 
 if __name__ == '__main__':
   inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/')
-  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json6')
+  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json7')
 
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
@@ -158,9 +158,14 @@ if __name__ == '__main__':
   }
   if not outputs_path.exists():
     outputs_path.mkdir()
-
+  # v10 true
+  # v12 true
+  # v13 false
   skip_zero_entities = True
-  skip_zero_rels = True
+  # v10 true
+  # v12 false
+  # v13 false
+  skip_zero_rels = False
   print('Reading full dataset...')
   all_sentences = read_sentences(
     inputs_path / 'corpus_pubtator.txt',
