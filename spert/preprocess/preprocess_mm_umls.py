@@ -136,7 +136,7 @@ def read_umls_rel_lookup(path, keep_rel_types):
 
 if __name__ == '__main__':
   inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/')
-  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json7')
+  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json8')
 
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
@@ -161,7 +161,7 @@ if __name__ == '__main__':
   # v10 true
   # v12 true
   # v13 false
-  skip_zero_entities = True
+  skip_zero_entities = False
   # v10 true
   # v12 false
   # v13 false
