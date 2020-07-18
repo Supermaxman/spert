@@ -10,7 +10,7 @@ from . import umls_reader
 from . import umls
 
 
-def read_sentences(path: Path, nlp, umls_rel_lookup):
+def read_sentences(path: Path, nlp, umls_rel_lookup, keep_entity_types):
   sentences = []
   with path.open('r') as fp:
     doc_id = None
@@ -66,7 +66,8 @@ def read_sentences(path: Path, nlp, umls_rel_lookup):
           )
           entity.umls_cui = umls_cui
           entity.umls_types = umls_types
-          entities.append(entity)
+          if entity.entity_type in keep_entity_types:
+            entities.append(entity)
 
   for sentence in sentences:
     for head, tail in itertools.product(sentence.entities, sentence.entities):
@@ -86,7 +87,7 @@ def read_sentences(path: Path, nlp, umls_rel_lookup):
   return sentences
 
 
-def read_umls_rel_lookup(path, keep_rels):
+def read_umls_rel_lookup(path, keep_rel_types):
   def umls_rel_filter(x):
     # remove reflexive relations
     if x.cui2 == x.cui1:
@@ -110,7 +111,7 @@ def read_umls_rel_lookup(path, keep_rels):
     # too few
     if x.rel == 'SY' or x.rel == 'AQ' or x.rel == 'QB':
       return False
-    if x.rel not in keep_rels:
+    if x.rel not in keep_rel_types:
       return False
     return True
 
@@ -128,7 +129,7 @@ def read_umls_rel_lookup(path, keep_rels):
 
 if __name__ == '__main__':
   inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/')
-  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json3')
+  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json4')
 
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
@@ -138,9 +139,9 @@ if __name__ == '__main__':
   print('Reading umls rels...')
   with (outputs_path / 'types.json').open('r') as f:
     type_info = json.load(f)
-    keep_rels = set(type_info['relations'].keys())
-  print(f'Keep rel types: {keep_rels}')
-  umls_rel_lookup = read_umls_rel_lookup(umls_path, keep_rels)
+    keep_rel_types = set(type_info['relations'].keys())
+    keep_entity_types = set(type_info['entities'].keys())
+  umls_rel_lookup = read_umls_rel_lookup(umls_path, keep_rel_types)
 
   splits = ['train', 'dev', 'test']
   split_files = {
@@ -152,7 +153,7 @@ if __name__ == '__main__':
     outputs_path.mkdir()
 
   print('Reading full dataset...')
-  all_sentences = read_sentences(inputs_path / 'corpus_pubtator.txt', nlp, umls_rel_lookup)
+  all_sentences = read_sentences(inputs_path / 'corpus_pubtator.txt', nlp, umls_rel_lookup, keep_entity_types)
 
   for split in splits:
     split_input_path = inputs_path / split_files[split]
