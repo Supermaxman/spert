@@ -75,14 +75,13 @@ def read_sentences(path: Path, nlp, umls_rel_lookup, keep_entity_types):
       # but allow reflexive cui relations, just not same mention
       if head != tail:
         rel_types = umls_rel_lookup[(head.umls_cui, tail.umls_cui)]
-        if len(rel_types) > 0:
-          for rel_type in rel_types:
-            relation = text_utils.Relation(
-              head=head,
-              tail=tail,
-              rel_type=rel_type
-            )
-            sentence.relations.append(relation)
+        for rel_type in rel_types:
+          relation = text_utils.Relation(
+            head=head,
+            tail=tail,
+            rel_type=rel_type
+          )
+          sentence.relations.append(relation)
 
   return sentences
 
@@ -115,7 +114,7 @@ def read_umls_rel_lookup(path, keep_rel_types):
       return False
     return True
 
-  lookup = collections.defaultdict(list)
+  lookup = collections.defaultdict(set)
   rel_iter = umls_reader.read_umls(
     path,
     umls.UmlsRelation,
@@ -123,13 +122,13 @@ def read_umls_rel_lookup(path, keep_rel_types):
   )
   for rel in rel_iter:
     # TODO consider types including rela for more detailed relation types
-    lookup[(rel.cui2, rel.cui1)].append(rel.rel)
+    lookup[(rel.cui2, rel.cui1)].add(rel.rel)
   return lookup
 
 
 if __name__ == '__main__':
   inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/')
-  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json4')
+  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json5')
 
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
