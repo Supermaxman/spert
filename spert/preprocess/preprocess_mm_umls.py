@@ -91,7 +91,7 @@ def read_sentences(path: Path, nlp, umls_rel_lookup, keep_entity_types, skip_zer
       continue
     filtered_sentences.append(sentence)
 
-  return sentences
+  return filtered_sentences
 
 
 def read_umls_rel_lookup(path, keep_rel_types):
@@ -179,10 +179,10 @@ if __name__ == '__main__':
     split_output_path = (outputs_path / split).with_suffix('.json')
 
     print(f'Reading split {split}...')
-    sentences = [sentence for sentence in all_sentences if sentence.sent_id.split('S')[0][1:] in split_ids]
-    split_dict = [s.to_dict() for s in sentences]
+    split_sentences = [sentence for sentence in all_sentences if sentence.sent_id.split('S')[0][1:] in split_ids]
+    split_dict = [s.to_dict() for s in split_sentences]
     stats = collections.Counter()
-    for sentence in sentences:
+    for sentence in split_sentences:
       stats['entities'] += len(sentence.entities)
       for entity in sentence.entities:
         stats[entity.entity_type] += 1
