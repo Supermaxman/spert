@@ -70,10 +70,10 @@ def read_sentences(path: Path, nlp, umls_rel_lookup, keep_entity_types, skip_zer
             entities.append(entity)
 
   for sentence in sentences:
-    for head, tail in itertools.product(sentence.entities, sentence.entities):
-      # ignore reflexive relations,
-      # but allow reflexive cui relations, just not same mention
-      if head != tail:
+    for i in range(0, len(sentence.entities)):
+      head = sentence.entities[i]
+      for j in range(i+1, len(sentence.entities)):
+        tail = sentence.entities[j]
         rel_types = umls_rel_lookup[(head.umls_cui, tail.umls_cui)]
         for rel_type in rel_types:
           relation = text_utils.Relation(
@@ -159,8 +159,8 @@ if __name__ == '__main__':
   if not outputs_path.exists():
     outputs_path.mkdir()
 
-  skip_zero_entities = False
-  skip_zero_rels = False
+  skip_zero_entities = True
+  skip_zero_rels = True
   print('Reading full dataset...')
   all_sentences = read_sentences(
     inputs_path / 'corpus_pubtator.txt',
