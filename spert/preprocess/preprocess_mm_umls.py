@@ -191,7 +191,8 @@ if __name__ == '__main__':
       stats['has_relations'] += 1 if len(sentence.relations) > 0 else 0
       for relation in sentence.relations:
         stats[relation.rel_type] += 1
-
+    stats['has_entities'] = stats['has_entities'] / len(sentences)
+    stats['has_relations'] = stats['has_relations'] / len(sentences)
     for stat, count in stats.most_common():
       print(f'{stat}: {count}')
 
