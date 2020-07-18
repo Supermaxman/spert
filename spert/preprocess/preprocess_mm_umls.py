@@ -136,7 +136,7 @@ def read_umls_rel_lookup(path, keep_rel_types):
 
 if __name__ == '__main__':
   inputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/')
-  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json5')
+  outputs_path = Path('/users/max/data/corpora/medmentions/MedMentions/st21pv/data/json6')
 
   umls_path = Path('/users/max/data/ontologies/umls_2019/2019AA-full/2019AA/META/MRREL.RRF')
 
@@ -189,10 +189,9 @@ if __name__ == '__main__':
       stats['relations'] += len(sentence.relations)
       stats['has_entities'] += 1 if len(sentence.entities) > 0 else 0
       stats['has_relations'] += 1 if len(sentence.relations) > 0 else 0
+      stats['count'] += 1
       for relation in sentence.relations:
         stats[relation.rel_type] += 1
-    stats['has_entities'] = stats['has_entities'] / len(sentences)
-    stats['has_relations'] = stats['has_relations'] / len(sentences)
     for stat, count in stats.most_common():
       print(f'{stat}: {count}')
 
