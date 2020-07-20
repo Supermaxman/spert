@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
 #
-num_seeds=5
-max_split=9
-for seed in {1..${num_seeds}}; do
-  for split in {0..${max_split}}; do
+for seed in {1..5}; do
+  for split in {0..9}; do
     bash scripts/train_and_eval.sh \
       ade-$1-${split} \
       configs/ade/ade-$1 \
