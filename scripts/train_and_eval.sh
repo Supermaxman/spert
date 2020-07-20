@@ -24,5 +24,5 @@ python spert.py eval \
  --tokenizer_path=data/save/$1-$3-train/final_model/ \
  --dataset_path=$6
 
-mv data/save/$1-$3-eval/*/final_model data/save/$1-$3-eval/final_model/
-cp data/save/$1-$3-eval/final_model/eval_test.csv data/results/$1-$3-eval-test.csv
+mv data/log/$1-$3-eval/*/final_model data/log/$1-$3-eval/final_model/
+cp data/log/$1-$3-eval/final_model/eval_test.csv data/results/$1-$3-eval-test.csv
