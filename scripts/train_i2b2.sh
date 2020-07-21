@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-for seed in {1..5}; do
+for seed in {0..4}; do
   bash scripts/train_and_eval.sh \
     i2b2-$1 \
     configs/i2b2/i2b2-$1 \

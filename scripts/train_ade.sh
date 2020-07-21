@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-for seed in {1..5}; do
+for seed in {0..4}; do
   for split in {0..9}; do
     bash scripts/train_and_eval.sh \
       ade-$1-${split} \
