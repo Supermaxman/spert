@@ -9,14 +9,14 @@ from transformers import BertTokenizer
 
 from spert import util
 from spert.entities import Document, Dataset, EntityType
-from spert.input_reader import JsonInputReader
+from spert.input_reader import BaseInputReader
 from spert.opt import jinja2
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class Evaluator:
-    def __init__(self, dataset: Dataset, input_reader: JsonInputReader, text_encoder: BertTokenizer,
+    def __init__(self, dataset: Dataset, input_reader: BaseInputReader, text_encoder: BertTokenizer,
                  rel_filter_threshold: float, no_overlapping: bool,
                  predictions_path: str, examples_path: str, example_count: int, epoch: int, dataset_label: str):
         self._text_encoder = text_encoder
@@ -45,11 +45,11 @@ class Evaluator:
 
         self._convert_gt(self._dataset.documents)
 
-    def eval_batch(self, batch_entity_clf: torch.tensor, batch_rel_clf: torch.tensor,
+    def eval_batch(self, batch_entity_clf: torch.tensor, assertion_clf: torch.tensor, batch_rel_clf: torch.tensor,
                    batch_rels: torch.tensor, batch: dict):
         batch_size = batch_rel_clf.shape[0]
         rel_class_count = batch_rel_clf.shape[2]
-
+        # TODO add assertion evaluation
         # get maximum activation (index of predicted entity type)
         batch_entity_types = batch_entity_clf.argmax(dim=-1)
         # apply entity sample mask

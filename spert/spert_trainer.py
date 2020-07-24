@@ -1,6 +1,7 @@
 import argparse
 import math
 import os
+from typing import Type
 
 import torch
 from torch.nn import DataParallel
@@ -30,9 +31,11 @@ class SpERTTrainer(BaseTrainer):
         super().__init__(args)
 
         # byte-pair encoding
-        self._tokenizer = BertTokenizer.from_pretrained(args.tokenizer_path,
-                                                        do_lower_case=args.lowercase,
-                                                        cache_dir=args.cache_path)
+        self._tokenizer = BertTokenizer.from_pretrained(
+          args.tokenizer_path,
+          do_lower_case=args.lowercase,
+          cache_dir=args.cache_path
+        )
 
         # path to export predictions to
         self._predictions_path = os.path.join(self._log_path, 'predictions_%s_epoch_%s.json')
@@ -40,7 +43,7 @@ class SpERTTrainer(BaseTrainer):
         # path to export relation extraction examples to
         self._examples_path = os.path.join(self._log_path, 'examples_%s_%s_epoch_%s.html')
 
-    def train(self, train_path: str, valid_path: str, types_path: str, input_reader_cls: BaseInputReader):
+    def train(self, train_path: str, valid_path: str, types_path: str, input_reader_cls: Type[BaseInputReader]):
         args = self.args
         train_label, valid_label = 'train', 'valid'
 
@@ -52,8 +55,14 @@ class SpERTTrainer(BaseTrainer):
         self._init_eval_logging(valid_label)
 
         # read datasets
-        input_reader = input_reader_cls(types_path, self._tokenizer, args.neg_entity_count,
-                                        args.neg_relation_count, args.max_span_size, self._logger)
+        input_reader = input_reader_cls(
+          types_path,
+          self._tokenizer,
+          args.neg_entity_count,
+          args.neg_relation_count,
+          args.max_span_size,
+          self._logger
+        )
         input_reader.read({train_label: train_path, valid_label: valid_path})
         self._log_datasets(input_reader)
 
@@ -82,6 +91,7 @@ class SpERTTrainer(BaseTrainer):
           cls_token=self._tokenizer.convert_tokens_to_ids('[CLS]'),
           relation_types=input_reader.relation_type_count - 1,
           entity_types=input_reader.entity_type_count,
+          assertion_types=input_reader.assertion_type_count,
           max_pairs=self.args.max_pairs,
           prop_drop=self.args.prop_drop,
           size_embedding=self.args.size_embedding,
@@ -99,15 +109,31 @@ class SpERTTrainer(BaseTrainer):
 
         # create optimizer
         optimizer_params = self._get_optimizer_params(model)
-        optimizer = AdamW(optimizer_params, lr=args.lr, weight_decay=args.weight_decay, correct_bias=False)
+        optimizer = AdamW(
+          optimizer_params,
+          lr=args.lr,
+          weight_decay=args.weight_decay,
+          correct_bias=False
+        )
         # create scheduler
-        scheduler = transformers.get_linear_schedule_with_warmup(optimizer,
-                                                                 num_warmup_steps=args.lr_warmup * updates_total,
-                                                                 num_training_steps=updates_total)
+        scheduler = transformers.get_linear_schedule_with_warmup(
+          optimizer,
+          num_warmup_steps=args.lr_warmup * updates_total,
+          num_training_steps=updates_total
+        )
         # create loss function
         rel_criterion = torch.nn.BCEWithLogitsLoss(reduction='none')
         entity_criterion = torch.nn.CrossEntropyLoss(reduction='none')
-        compute_loss = SpERTLoss(rel_criterion, entity_criterion, model, optimizer, scheduler, args.max_grad_norm)
+        assertion_criterion = torch.nn.CrossEntropyLoss(reduction='none')
+        compute_loss = SpERTLoss(
+          rel_criterion,
+          entity_criterion,
+          assertion_criterion,
+          model,
+          optimizer,
+          scheduler,
+          args.max_grad_norm
+        )
 
         # eval validation set
         if args.init_eval:
@@ -125,15 +151,22 @@ class SpERTTrainer(BaseTrainer):
         # save final model
         extra = dict(epoch=args.epochs, updates_epoch=updates_epoch, epoch_iteration=0)
         global_iteration = args.epochs * updates_epoch
-        self._save_model(self._save_path, model, self._tokenizer, global_iteration,
-                         optimizer=optimizer if self.args.save_optimizer else None, extra=extra,
-                         include_iteration=False, name='final_model')
+        self._save_model(
+          self._save_path,
+          model,
+          self._tokenizer,
+          global_iteration,
+          optimizer=optimizer if self.args.save_optimizer else None,
+          extra=extra,
+          include_iteration=False,
+          name='final_model'
+        )
 
         self._logger.info("Logged in: %s" % self._log_path)
         self._logger.info("Saved in: %s" % self._save_path)
         self._close_summary_writer()
 
-    def eval(self, dataset_path: str, types_path: str, input_reader_cls: BaseInputReader):
+    def eval(self, dataset_path: str, types_path: str, input_reader_cls: Type[BaseInputReader]):
         args = self.args
         dataset_label = 'test'
 
@@ -162,6 +195,7 @@ class SpERTTrainer(BaseTrainer):
           cls_token=self._tokenizer.convert_tokens_to_ids('[CLS]'),
           relation_types=input_reader.relation_type_count - 1,
           entity_types=input_reader.entity_type_count,
+          assertion_types=input_reader.assertion_type_count,
           max_pairs=self.args.max_pairs,
           prop_drop=self.args.prop_drop,
           size_embedding=self.args.size_embedding,
@@ -183,8 +217,14 @@ class SpERTTrainer(BaseTrainer):
 
         # create data loader
         dataset.switch_mode(Dataset.TRAIN_MODE)
-        data_loader = DataLoader(dataset, batch_size=self.args.train_batch_size, shuffle=True, drop_last=True,
-                                 num_workers=self.args.sampling_processes, collate_fn=sampling.collate_fn_padding)
+        data_loader = DataLoader(
+          dataset,
+          batch_size=self.args.train_batch_size,
+          shuffle=True,
+          drop_last=True,
+          num_workers=self.args.sampling_processes,
+          collate_fn=sampling.collate_fn_padding
+        )
 
         model.zero_grad()
 
@@ -195,15 +235,26 @@ class SpERTTrainer(BaseTrainer):
             batch = util.to_device(batch, self._device)
 
             # forward step
-            entity_logits, rel_logits = model(encodings=batch['encodings'], context_masks=batch['context_masks'],
-                                              entity_masks=batch['entity_masks'], entity_sizes=batch['entity_sizes'],
-                                              relations=batch['rels'], rel_masks=batch['rel_masks'])
+            entity_logits, assertion_logits, rel_logits = model(
+              encodings=batch['encodings'],
+              context_masks=batch['context_masks'],
+              entity_masks=batch['entity_masks'],
+              entity_sizes=batch['entity_sizes'],
+              relations=batch['rels'],
+              rel_masks=batch['rel_masks']
+            )
 
             # compute loss and optimize parameters
-            batch_loss = compute_loss.compute(entity_logits=entity_logits, rel_logits=rel_logits,
-                                              rel_types=batch['rel_types'], entity_types=batch['entity_types'],
-                                              entity_sample_masks=batch['entity_sample_masks'],
-                                              rel_sample_masks=batch['rel_sample_masks'])
+            batch_loss = compute_loss.compute(
+              entity_logits=entity_logits,
+              assertion_logits=assertion_logits,
+              rel_logits=rel_logits,
+              rel_types=batch['rel_types'],
+              entity_types=batch['entity_types'],
+              assertion_types=batch['assertion_types'],
+              entity_sample_masks=batch['entity_sample_masks'],
+              rel_sample_masks=batch['rel_sample_masks']
+            )
 
             # logging
             iteration += 1
@@ -214,7 +265,7 @@ class SpERTTrainer(BaseTrainer):
 
         return iteration
 
-    def _eval(self, model: torch.nn.Module, dataset: Dataset, input_reader: JsonInputReader,
+    def _eval(self, model: torch.nn.Module, dataset: Dataset, input_reader: BaseInputReader,
               epoch: int = 0, updates_epoch: int = 0, iteration: int = 0):
         self._logger.info("Evaluate: %s" % dataset.label)
 
@@ -223,14 +274,29 @@ class SpERTTrainer(BaseTrainer):
             model = model.module
 
         # create evaluator
-        evaluator = Evaluator(dataset, input_reader, self._tokenizer,
-                              self.args.rel_filter_threshold, self.args.no_overlapping, self._predictions_path,
-                              self._examples_path, self.args.example_count, epoch, dataset.label)
+        evaluator = Evaluator(
+          dataset,
+          input_reader,
+          self._tokenizer,
+          self.args.rel_filter_threshold,
+          self.args.no_overlapping,
+          self._predictions_path,
+          self._examples_path,
+          self.args.example_count,
+          epoch,
+          dataset.label
+        )
 
         # create data loader
         dataset.switch_mode(Dataset.EVAL_MODE)
-        data_loader = DataLoader(dataset, batch_size=self.args.eval_batch_size, shuffle=False, drop_last=False,
-                                 num_workers=self.args.sampling_processes, collate_fn=sampling.collate_fn_padding)
+        data_loader = DataLoader(
+          dataset,
+          batch_size=self.args.eval_batch_size,
+          shuffle=False,
+          drop_last=False,
+          num_workers=self.args.sampling_processes,
+          collate_fn=sampling.collate_fn_padding
+        )
 
         with torch.no_grad():
             model.eval()
@@ -242,14 +308,18 @@ class SpERTTrainer(BaseTrainer):
                 batch = util.to_device(batch, self._device)
 
                 # run model (forward pass)
-                result = model(encodings=batch['encodings'], context_masks=batch['context_masks'],
-                               entity_masks=batch['entity_masks'], entity_sizes=batch['entity_sizes'],
-                               entity_spans=batch['entity_spans'], entity_sample_masks=batch['entity_sample_masks'],
-                               evaluate=True)
-                entity_clf, rel_clf, rels = result
+                result = model(
+                  encodings=batch['encodings'],
+                  context_masks=batch['context_masks'],
+                  entity_masks=batch['entity_masks'],
+                  entity_sizes=batch['entity_sizes'],
+                  entity_sample_masks=batch['entity_sample_masks'],
+                  evaluate=True
+                )
+                entity_clf, assertion_clf, rel_clf, rels = result
 
                 # evaluate batch
-                evaluator.eval_batch(entity_clf, rel_clf, rels, batch)
+                evaluator.eval_batch(entity_clf, assertion_clf, rel_clf, rels, batch)
 
         global_iteration = epoch * updates_epoch + iteration
         ner_eval, rel_eval, rel_nec_eval = evaluator.compute_scores()

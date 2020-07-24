@@ -9,15 +9,19 @@ class Loss(ABC):
 
 
 class SpERTLoss(Loss):
-    def __init__(self, rel_criterion, entity_criterion, model, optimizer, scheduler, max_grad_norm):
+    def __init__(self, rel_criterion, entity_criterion, assertion_criterion,
+                 model, optimizer, scheduler, max_grad_norm):
         self._rel_criterion = rel_criterion
         self._entity_criterion = entity_criterion
+        self._assertion_criterion = assertion_criterion
         self._model = model
         self._optimizer = optimizer
         self._scheduler = scheduler
         self._max_grad_norm = max_grad_norm
 
-    def compute(self, entity_logits, rel_logits, entity_types, rel_types, entity_sample_masks, rel_sample_masks):
+    def compute(self, entity_logits, assertion_logits, rel_logits,
+                entity_types, assertion_types, rel_types,
+                entity_sample_masks, rel_sample_masks):
         # entity loss
         entity_logits = entity_logits.view(-1, entity_logits.shape[-1])
         entity_types = entity_types.view(-1)
@@ -26,11 +30,20 @@ class SpERTLoss(Loss):
         entity_loss = self._entity_criterion(entity_logits, entity_types)
         entity_loss = (entity_loss * entity_sample_masks).sum() / entity_sample_masks.sum()
 
+        train_loss = entity_loss
+
+        # mask out non-true entities using entity_types as the mask
+        assertion_mask = (entity_types > 0).float()
+        assertion_count = assertion_mask.sum()
+        if assertion_count.item() > 0:
+            assertion_loss = self._assertion_criterion(assertion_logits, assertion_types)
+            assertion_loss = (assertion_loss * assertion_mask).sum() / assertion_count
+            train_loss += assertion_loss
         # relation loss
         rel_sample_masks = rel_sample_masks.view(-1).float()
         rel_count = rel_sample_masks.sum()
 
-        if rel_count.item() != 0:
+        if rel_count.item() > 0:
             rel_logits = rel_logits.view(-1, rel_logits.shape[-1])
             rel_types = rel_types.view(-1, rel_types.shape[-1])
 
@@ -39,10 +52,7 @@ class SpERTLoss(Loss):
             rel_loss = (rel_loss * rel_sample_masks).sum() / rel_count
 
             # joint loss
-            train_loss = entity_loss + rel_loss
-        else:
-            # corner case: no positive/negative relation samples
-            train_loss = entity_loss
+            train_loss += rel_loss
 
         train_loss.backward()
         torch.nn.utils.clip_grad_norm_(self._model.parameters(), self._max_grad_norm)

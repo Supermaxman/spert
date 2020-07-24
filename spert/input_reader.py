@@ -8,7 +8,7 @@ from tqdm import tqdm
 from transformers import BertTokenizer
 
 from spert import util
-from spert.entities import Dataset, EntityType, RelationType, Entity, Relation, Document
+from spert.entities import Dataset, EntityType, RelationType, Entity, Relation, Document, AssertionType
 
 
 class BaseInputReader(ABC):
@@ -17,7 +17,9 @@ class BaseInputReader(ABC):
         types = json.load(open(types_path), object_pairs_hook=OrderedDict)  # entity + relation types
 
         self._entity_types = OrderedDict()
+        self._assertion_types = OrderedDict()
         self._idx2entity_type = OrderedDict()
+        self._idx2assertion_type = OrderedDict()
         self._relation_types = OrderedDict()
         self._idx2relation_type = OrderedDict()
 
@@ -32,6 +34,12 @@ class BaseInputReader(ABC):
             entity_type = EntityType(key, i + 1, v['short'], v['verbose'])
             self._entity_types[key] = entity_type
             self._idx2entity_type[i + 1] = entity_type
+
+        # specified assertion types
+        for i, (key, v) in enumerate(types['assertions'].items()):
+            assertion_type = AssertionType(key, i, v['short'], v['verbose'])
+            self._assertion_types[key] = assertion_type
+            self._idx2assertion_type[i] = assertion_type
 
         # relations
         # add 'None' relation type
@@ -68,6 +76,10 @@ class BaseInputReader(ABC):
         entity = self._idx2entity_type[idx]
         return entity
 
+    def get_assertion_type(self, idx) -> AssertionType:
+        assertion = self._idx2assertion_type[idx]
+        return assertion
+
     def get_relation_type(self, idx) -> RelationType:
         relation = self._idx2relation_type[idx]
         return relation
@@ -95,6 +107,10 @@ class BaseInputReader(ABC):
         return self._entity_types
 
     @property
+    def assertion_types(self):
+        return self._assertion_types
+
+    @property
     def relation_types(self):
         return self._relation_types
 
@@ -105,6 +121,10 @@ class BaseInputReader(ABC):
     @property
     def entity_type_count(self):
         return len(self._entity_types)
+
+    @property
+    def assertion_type_count(self):
+        return len(self._assertion_types)
 
     @property
     def vocabulary_size(self):
@@ -133,8 +153,15 @@ class JsonInputReader(BaseInputReader):
 
     def read(self, dataset_paths):
         for dataset_label, dataset_path in dataset_paths.items():
-            dataset = Dataset(dataset_label, self._relation_types, self._entity_types, self._neg_entity_count,
-                              self._neg_rel_count, self._max_span_size)
+            dataset = Dataset(
+                dataset_label,
+                self._relation_types,
+                self._entity_types,
+                self._assertion_types,
+                self._neg_entity_count,
+                self._neg_rel_count,
+                self._max_span_size
+            )
             self._parse_dataset(dataset_path, dataset)
             self._datasets[dataset_label] = dataset
 
@@ -189,12 +216,13 @@ class JsonInputReader(BaseInputReader):
 
         for entity_idx, jentity in enumerate(jentities):
             entity_type = self._entity_types[jentity['type']]
+            assertion_type = self._assertion_types[jentity['assertion']]
             start, end = jentity['start'], jentity['end']
 
             # create entity mention
             tokens = doc_tokens[start:end]
             phrase = " ".join([t.phrase for t in tokens])
-            entity = dataset.create_entity(entity_type, tokens, phrase)
+            entity = dataset.create_entity(entity_type, assertion_type, tokens, phrase)
             entities.append(entity)
 
         return entities

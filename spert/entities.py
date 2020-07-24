@@ -80,6 +80,41 @@ class EntityType:
         return hash(self._identifier)
 
 
+class AssertionType:
+    def __init__(self, identifier, index, short_name, verbose_name):
+        self._identifier = identifier
+        self._index = index
+        self._short_name = short_name
+        self._verbose_name = verbose_name
+
+    @property
+    def identifier(self):
+        return self._identifier
+
+    @property
+    def index(self):
+        return self._index
+
+    @property
+    def short_name(self):
+        return self._short_name
+
+    @property
+    def verbose_name(self):
+        return self._verbose_name
+
+    def __int__(self):
+        return self._index
+
+    def __eq__(self, other):
+        if isinstance(other, AssertionType):
+            return self._identifier == other._identifier
+        return False
+
+    def __hash__(self):
+        return hash(self._identifier)
+
+
 class Token:
     def __init__(self, tid: int, index: int, span_start: int, span_end: int, phrase: str):
         self._tid = tid  # ID within the corresponding dataset
@@ -154,20 +189,26 @@ class TokenSpan:
 
 
 class Entity:
-    def __init__(self, eid: int, entity_type: EntityType, tokens: List[Token], phrase: str):
+    def __init__(self, eid: int, entity_type: EntityType,
+                 assertion_type: AssertionType, tokens: List[Token], phrase: str):
         self._eid = eid  # ID within the corresponding dataset
 
         self._entity_type = entity_type
+        self._assertion_type = assertion_type
 
         self._tokens = tokens
         self._phrase = phrase
 
     def as_tuple(self):
-        return self.span_start, self.span_end, self._entity_type
+        return self.span_start, self.span_end, self._entity_type, self._assertion_type
 
     @property
     def entity_type(self):
         return self._entity_type
+
+    @property
+    def assertion_type(self):
+        return self._assertion_type
 
     @property
     def tokens(self):
@@ -334,11 +375,12 @@ class Dataset(TorchDataset):
     TRAIN_MODE = 'train'
     EVAL_MODE = 'eval'
 
-    def __init__(self, label, rel_types, entity_types, neg_entity_count,
+    def __init__(self, label, rel_types, entity_types, assertion_types, neg_entity_count,
                  neg_rel_count, max_span_size):
         self._label = label
         self._rel_types = rel_types
         self._entity_types = entity_types
+        self._assertion_types = assertion_types
         self._neg_entity_count = neg_entity_count
         self._neg_rel_count = neg_rel_count
         self._max_span_size = max_span_size
@@ -372,8 +414,8 @@ class Dataset(TorchDataset):
 
         return document
 
-    def create_entity(self, entity_type, tokens, phrase) -> Entity:
-        mention = Entity(self._eid, entity_type, tokens, phrase)
+    def create_entity(self, entity_type, assertion_type, tokens, phrase) -> Entity:
+        mention = Entity(self._eid, entity_type, assertion_type, tokens, phrase)
         self._entities[self._eid] = mention
         self._eid += 1
         return mention
@@ -391,10 +433,19 @@ class Dataset(TorchDataset):
         doc = self._documents[index]
 
         if self._mode == Dataset.TRAIN_MODE:
-            return sampling.create_train_sample(doc, self._neg_entity_count, self._neg_rel_count,
-                                                self._max_span_size, len(self._rel_types))
+            batch = sampling.create_train_sample(
+                doc,
+                self._neg_entity_count,
+                self._neg_rel_count,
+                self._max_span_size,
+                len(self._rel_types)
+            )
         else:
-            return sampling.create_eval_sample(doc, self._max_span_size)
+            batch = sampling.create_eval_sample(
+                doc,
+                self._max_span_size
+            )
+        return batch
 
     def switch_mode(self, mode):
         self._mode = mode
