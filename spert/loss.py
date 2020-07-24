@@ -32,6 +32,8 @@ class SpERTLoss(Loss):
 
         train_loss = entity_loss
 
+        assertion_logits = assertion_logits.view(-1, assertion_logits.shape[-1])
+        assertion_types = assertion_types.view(-1)
         # mask out non-true entities using entity_types as the mask
         assertion_mask = (entity_types > 0).float()
         assertion_count = assertion_mask.sum()
