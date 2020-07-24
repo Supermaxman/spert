@@ -322,6 +322,7 @@ class SpERTTrainer(BaseTrainer):
                 evaluator.eval_batch(entity_clf, assertion_clf, rel_clf, rels, batch)
 
         global_iteration = epoch * updates_epoch + iteration
+        # TODO add assertion eval
         ner_eval, rel_eval, rel_nec_eval = evaluator.compute_scores()
         self._log_eval(*ner_eval, *rel_eval, *rel_nec_eval,
                        epoch, iteration, global_iteration, dataset.label)
