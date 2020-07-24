@@ -313,6 +313,7 @@ class SpERTTrainer(BaseTrainer):
                   context_masks=batch['context_masks'],
                   entity_masks=batch['entity_masks'],
                   entity_sizes=batch['entity_sizes'],
+                  entity_spans=batch['entity_spans'],
                   entity_sample_masks=batch['entity_sample_masks'],
                   evaluate=True
                 )
