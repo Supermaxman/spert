@@ -80,6 +80,7 @@ def train_argparser():
                             help="Proportion of total train iterations to warmup in linear increase/decrease schedule")
     arg_parser.add_argument('--weight_decay', type=float, default=0.01, help="Weight decay to apply")
     arg_parser.add_argument('--max_grad_norm', type=float, default=1.0, help="Maximum gradient norm")
+    arg_parser.add_argument('--assertion_loss_weight', type=float, default=1.0, help="Weight of assertion loss.")
 
     _add_common_args(arg_parser)
 

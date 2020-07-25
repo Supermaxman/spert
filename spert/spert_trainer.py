@@ -132,7 +132,8 @@ class SpERTTrainer(BaseTrainer):
           model,
           optimizer,
           scheduler,
-          args.max_grad_norm
+          args.max_grad_norm,
+          args.assertion_loss_weight
         )
 
         # eval validation set

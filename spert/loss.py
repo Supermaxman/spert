@@ -10,7 +10,7 @@ class Loss(ABC):
 
 class SpERTLoss(Loss):
     def __init__(self, rel_criterion, entity_criterion, assertion_criterion,
-                 model, optimizer, scheduler, max_grad_norm):
+                 model, optimizer, scheduler, max_grad_norm, assertion_loss_weight):
         self._rel_criterion = rel_criterion
         self._entity_criterion = entity_criterion
         self._assertion_criterion = assertion_criterion
@@ -18,6 +18,7 @@ class SpERTLoss(Loss):
         self._optimizer = optimizer
         self._scheduler = scheduler
         self._max_grad_norm = max_grad_norm
+        self.assertion_loss_weight = assertion_loss_weight
 
     def compute(self, entity_logits, assertion_logits, rel_logits,
                 entity_types, assertion_types, rel_types,
@@ -40,7 +41,7 @@ class SpERTLoss(Loss):
         if assertion_count.item() > 0:
             assertion_loss = self._assertion_criterion(assertion_logits, assertion_types)
             assertion_loss = (assertion_loss * assertion_mask).sum() / assertion_count
-            train_loss += assertion_loss
+            train_loss += self.assertion_loss_weight * assertion_loss
         # relation loss
         rel_sample_masks = rel_sample_masks.view(-1).float()
         rel_count = rel_sample_masks.sum()
