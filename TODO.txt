@@ -1,0 +1,6 @@
+TODO
+ - Run biodis experiments on i2b2
+ - Run bioclin experiments on i2b2
+ - Run only-entity-detection bert-base experiments on i2b2
+ - Write branch code for and Run gold relation extraction eval for i2b2
+ - Consider which experiments to run on ADE
