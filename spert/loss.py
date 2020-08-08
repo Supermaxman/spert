@@ -29,20 +29,20 @@ class SpERTLoss(Loss):
         # relation loss
         rel_sample_masks = rel_sample_masks.view(-1).float()
         rel_count = rel_sample_masks.sum()
-
-        if rel_count.item() != 0:
-            rel_logits = rel_logits.view(-1, rel_logits.shape[-1])
-            rel_types = rel_types.view(-1, rel_types.shape[-1])
-
-            rel_loss = self._rel_criterion(rel_logits, rel_types)
-            rel_loss = rel_loss.sum(-1) / rel_loss.shape[-1]
-            rel_loss = (rel_loss * rel_sample_masks).sum() / rel_count
-
-            # joint loss
-            train_loss = entity_loss + rel_loss
-        else:
-            # corner case: no positive/negative relation samples
-            train_loss = entity_loss
+        # No rel loss for entity span only experiments
+        # if rel_count.item() != 0:
+        #     rel_logits = rel_logits.view(-1, rel_logits.shape[-1])
+        #     rel_types = rel_types.view(-1, rel_types.shape[-1])
+        #
+        #     rel_loss = self._rel_criterion(rel_logits, rel_types)
+        #     rel_loss = rel_loss.sum(-1) / rel_loss.shape[-1]
+        #     rel_loss = (rel_loss * rel_sample_masks).sum() / rel_count
+        #
+        #     # joint loss
+        #     train_loss = entity_loss + rel_loss
+        # else:
+        #     # corner case: no positive/negative relation samples
+        train_loss = entity_loss
 
         train_loss.backward()
         torch.nn.utils.clip_grad_norm_(self._model.parameters(), self._max_grad_norm)
