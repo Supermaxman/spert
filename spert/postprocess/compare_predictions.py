@@ -12,7 +12,7 @@ def format_models(model_name):
 
 
 def load_model_predictions(model_path, full_model_name):
-	preds = json.load(open(os.path.join(model_path, full_model_name)))
+	preds = json.load(open(os.path.join(model_path, full_model_name, 'final_model', 'predictions_test_epoch_0.json')))
 	return preds
 
 
@@ -59,7 +59,7 @@ if __name__ == '__main__':
 		'--label_path', type=str, help="Path to labels", default='/users/max/data/corpora/i2b2/2010/json/test.json')
 	arg_parser.add_argument('--model_path', type=str, default='/shared/hltdir4/disk1/max/logs/spert/')
 	arg_parser.add_argument('--output_path', type=str, default='results/results.json')
-	arg_parser.add_argument('--seed', type=str, default=0)
+	arg_parser.add_argument('--seed', type=str, default=1)
 	arg_parser.add_argument('--split', type=str, default=None)
 	arg_parser.add_argument(
 		'--correct_model_list', type=str, help="List of model which get sentence right.", default='i2b2-biobert')
