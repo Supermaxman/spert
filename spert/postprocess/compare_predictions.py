@@ -12,7 +12,7 @@ def format_models(model_name):
 
 
 def load_model_predictions(model_path, full_model_name):
-	preds = json.load(open(os.path.join(model_path, full_model_name, 'final_model', 'predictions_test_epoch_0.json')))
+	preds = json.load(open(os.path.join(model_path, full_model_name, 'predictions_test_epoch_0.json')))
 	return preds
 
 
