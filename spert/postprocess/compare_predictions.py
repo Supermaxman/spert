@@ -39,14 +39,14 @@ def compare_results(label_list, correct_pred_list, incorrect_pred_list, correct_
 		result = {
 			'label': label
 		}
-		for c_pred, c_name in zip(correct_preds, correct_model_list):
-			match = match and compare(label, c_pred)
-			result[c_name] = c_pred
-			del c_pred['tokens']
 		for i_pred, i_name in zip(incorrect_preds, incorrect_model_list):
 			match = match and not compare(label, i_pred)
 			result[i_name] = i_pred
 			del i_pred['tokens']
+		for c_pred, c_name in zip(correct_preds, correct_model_list):
+			match = match and compare(label, c_pred)
+			result[c_name] = c_pred
+			del c_pred['tokens']
 		if match:
 			results.append(result)
 	return results
