@@ -75,10 +75,12 @@ if __name__ == '__main__':
 			match = match and not compare(label, i_pred)
 			result[i_name] = i_pred
 			del i_pred['tokens']
+			del i_pred['relations']
 		for c_pred, c_name in zip(correct_preds, correct_model_list):
 			match = match and compare(label, c_pred)
 			result[c_name] = c_pred
 			del c_pred['tokens']
+			del c_pred['relations']
 		if match:
 			results.append(result)
 
