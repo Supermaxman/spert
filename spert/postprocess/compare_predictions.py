@@ -86,7 +86,7 @@ if __name__ == '__main__':
 		match = True
 		if len(label['relations']) == 0 and require_relations:
 			continue
-		if max_entities and len(label['entities'] > max_entities):
+		if max_entities and len(label['entities']) > max_entities:
 			continue
 		# if not has_overlapping_spans(label):
 		# 	continue
