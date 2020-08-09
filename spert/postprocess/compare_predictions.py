@@ -72,6 +72,11 @@ if __name__ == '__main__':
 	correct_model_list = [format_models(name) for name in args.correct_model_list.split(',')]
 	incorrect_model_list = [format_models(name) for name in args.incorrect_model_list.split(',')]
 
+	if not correct_model_list[0]:
+		correct_model_list = []
+	if not incorrect_model_list[0]:
+		incorrect_model_list = []
+
 	labels = json.load(open(label_path))
 	correct_preds = [load_model_predictions(model_path, full_model_name) for full_model_name in correct_model_list]
 	incorrect_preds = [load_model_predictions(model_path, full_model_name) for full_model_name in incorrect_model_list]
