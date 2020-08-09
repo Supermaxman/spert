@@ -55,6 +55,7 @@ if __name__ == '__main__':
 	arg_parser.add_argument('--output_path', type=str, default='results/i2b2-incorrect-results.json')
 	arg_parser.add_argument('--seed', type=str, default=1)
 	arg_parser.add_argument('--split', type=str, default=None)
+	arg_parser.add_argument('--max_entities', type=int, default=2)
 	arg_parser.add_argument('--require_relations', type=bool, default=False)
 	arg_parser.add_argument(
 		'--correct_model_list', type=str, help="List of model which get sentence right.", default='')
@@ -68,6 +69,7 @@ if __name__ == '__main__':
 	output_path = args.output_path
 	seed = args.seed
 	split = args.split
+	max_entities = args.max_entities
 	require_relations = args.require_relations
 	# correct_model_list = [format_models(name) for name in args.correct_model_list.split(',')]
 	incorrect_model_list = [format_models(name) for name in args.incorrect_model_list.split(',')]
@@ -83,6 +85,8 @@ if __name__ == '__main__':
 	for label, incorrect_preds in ex_iter:
 		match = True
 		if len(label['relations']) == 0 and require_relations:
+			continue
+		if max_entities and len(label['entities'] > max_entities):
 			continue
 		# if not has_overlapping_spans(label):
 		# 	continue
