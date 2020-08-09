@@ -42,7 +42,7 @@ def has_overlapping_spans(label):
 
 
 def overlap(e1, e2):
-	is_overlap = e1['start'] <= e2['end'] - 1 and e2['start'] <= e1['end'] - 1
+	is_overlap = e1['start'] <= e2['end'] and e2['start'] <= e1['end']
 	return is_overlap
 
 
@@ -55,9 +55,9 @@ if __name__ == '__main__':
 	arg_parser.add_argument('--output_path', type=str, default='results/ade-results.json')
 	arg_parser.add_argument('--seed', type=str, default=1)
 	arg_parser.add_argument('--split', type=str, default=1)
-	arg_parser.add_argument('--require_relations', type=bool, default=True)
+	arg_parser.add_argument('--require_relations', type=bool, default=False)
 	arg_parser.add_argument(
-		'--correct_model_list', type=str, help="List of model which get sentence right.", default='ade-biobert')
+		'--correct_model_list', type=str, help="List of model which get sentence right.", default='')
 	arg_parser.add_argument(
 		'--incorrect_model_list', type=str, help="List of models which get sentence wrong.", default='')
 
