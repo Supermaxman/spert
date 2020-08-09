@@ -32,6 +32,20 @@ def compare(label, pred):
 	return entity_correct and rel_correct
 
 
+def has_overlapping_spans(label):
+	entities = label['entities']
+	for i in range(len(entities)):
+		for j in range(i+1, len(entities)):
+			if overlap(entities[i], entities[j]):
+				return True
+	return False
+
+
+def overlap(e1, e2):
+	is_overlap = e1['start'] <= e2['end'] - 1 and e2['start'] <= e1['end'] - 1
+	return is_overlap
+
+
 if __name__ == '__main__':
 	arg_parser = argparse.ArgumentParser()
 
@@ -45,7 +59,7 @@ if __name__ == '__main__':
 	arg_parser.add_argument(
 		'--correct_model_list', type=str, help="List of model which get sentence right.", default='ade-biobert')
 	arg_parser.add_argument(
-		'--incorrect_model_list', type=str, help="List of models which get sentence wrong.", default='ade-bert-base')
+		'--incorrect_model_list', type=str, help="List of models which get sentence wrong.", default='')
 
 	args = arg_parser.parse_args()
 
@@ -66,6 +80,8 @@ if __name__ == '__main__':
 	for label, correct_preds, incorrect_preds in zip(labels, zip(*correct_preds), zip(*incorrect_preds)):
 		match = True
 		if len(label['relations']) == 0 and require_relations:
+			continue
+		if not has_overlapping_spans(label):
 			continue
 		result = {
 			'label': label
