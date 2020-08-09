@@ -26,10 +26,12 @@ def compare_examples(label, pred):
 	return all(compare_example(label_example, pred_example) for label_example, pred_example in zip(label, pred))
 
 
-def compare(label, pred):
+def compare(label, pred, compare_rels=False):
 	entity_correct = compare_examples(label['entities'], pred['entities'])
-	# rel_correct = compare_examples(label['relations'], pred['relations'])
-	return entity_correct #and rel_correct
+	rel_correct = True
+	if compare_rels:
+		rel_correct = compare_examples(label['relations'], pred['relations'])
+	return entity_correct and rel_correct
 
 
 if __name__ == '__main__':
@@ -77,7 +79,7 @@ if __name__ == '__main__':
 			del i_pred['tokens']
 			del i_pred['relations']
 		for c_pred, c_name in zip(correct_preds, correct_model_list):
-			match = match and compare(label, c_pred)
+			match = match and compare(label, c_pred, compare_rels=True)
 			result[c_name] = c_pred
 			del c_pred['tokens']
 			del c_pred['relations']
