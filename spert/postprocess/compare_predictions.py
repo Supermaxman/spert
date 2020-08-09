@@ -57,9 +57,9 @@ if __name__ == '__main__':
 	arg_parser.add_argument('--split', type=str, default=1)
 	arg_parser.add_argument('--require_relations', type=bool, default=True)
 	arg_parser.add_argument(
-		'--correct_model_list', type=str, help="List of model which get sentence right.", default='ade-biobert')
+		'--correct_model_list', type=str, help="List of model which get sentence right.", default='')
 	arg_parser.add_argument(
-		'--incorrect_model_list', type=str, help="List of models which get sentence wrong.", default='ade-bert-base')
+		'--incorrect_model_list', type=str, help="List of models which get sentence wrong.", default='ade-biobert,ade-bert-base')
 
 	args = arg_parser.parse_args()
 
