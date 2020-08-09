@@ -55,7 +55,7 @@ if __name__ == '__main__':
 	arg_parser.add_argument('--output_path', type=str, default='results/ade-results.json')
 	arg_parser.add_argument('--seed', type=str, default=1)
 	arg_parser.add_argument('--split', type=str, default=1)
-	arg_parser.add_argument('--require_relations', type=bool, default=True)
+	arg_parser.add_argument('--require_relations', type=bool, default=False)
 	arg_parser.add_argument(
 		'--correct_model_list', type=str, help="List of model which get sentence right.", default='')
 	arg_parser.add_argument(
@@ -69,15 +69,17 @@ if __name__ == '__main__':
 	seed = args.seed
 	split = args.split
 	require_relations = args.require_relations
-	correct_model_list = [format_models(name) for name in args.correct_model_list.split(',')]
+	# correct_model_list = [format_models(name) for name in args.correct_model_list.split(',')]
 	incorrect_model_list = [format_models(name) for name in args.incorrect_model_list.split(',')]
 
 	labels = json.load(open(label_path))
-	correct_preds = [load_model_predictions(model_path, full_model_name) for full_model_name in correct_model_list]
+	# correct_preds = [load_model_predictions(model_path, full_model_name) for full_model_name in correct_model_list]
 	incorrect_preds = [load_model_predictions(model_path, full_model_name) for full_model_name in incorrect_model_list]
 
+	# ex_iter = zip(labels, zip(*correct_preds), zip(*incorrect_preds))
+	ex_iter = zip(labels, zip(*incorrect_preds))
 	results = []
-	for label, correct_preds, incorrect_preds in zip(labels, zip(*correct_preds), zip(*incorrect_preds)):
+	for label, correct_preds, incorrect_preds in ex_iter:
 		match = True
 		if len(label['relations']) == 0 and require_relations:
 			continue
