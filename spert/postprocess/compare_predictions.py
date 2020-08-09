@@ -28,24 +28,24 @@ def compare_examples(label, pred):
 
 def compare(label, pred):
 	entity_correct = compare_examples(label['entities'], pred['entities'])
-	rel_correct = compare_examples(label['relations'], pred['relations'])
-	return entity_correct and rel_correct
+	# rel_correct = compare_examples(label['relations'], pred['relations'])
+	return entity_correct #and rel_correct
 
 
 if __name__ == '__main__':
 	arg_parser = argparse.ArgumentParser()
 
 	arg_parser.add_argument(
-		'--label_path', type=str, help="Path to labels", default='data/datasets/ade/ade_split_1_test.json')
+		'--label_path', type=str, help="Path to labels", default='/users/max/data/corpora/i2b2/2010/json/test.json')
 	arg_parser.add_argument('--model_path', type=str, default='/shared/hltdir4/disk1/max/logs/spert/')
-	arg_parser.add_argument('--output_path', type=str, default='results/ade-results.json')
+	arg_parser.add_argument('--output_path', type=str, default='results/i2b2-only-span-results.json')
 	arg_parser.add_argument('--seed', type=str, default=1)
-	arg_parser.add_argument('--split', type=str, default=1)
+	arg_parser.add_argument('--split', type=str, default=None)
 	arg_parser.add_argument('--require_relations', type=bool, default=True)
 	arg_parser.add_argument(
-		'--correct_model_list', type=str, help="List of model which get sentence right.", default='ade-biobert')
+		'--correct_model_list', type=str, help="List of model which get sentence right.", default='i2b2-bert-base')
 	arg_parser.add_argument(
-		'--incorrect_model_list', type=str, help="List of models which get sentence wrong.", default='ade-bert-base')
+		'--incorrect_model_list', type=str, help="List of models which get sentence wrong.", default='i2b2-bert-base-only-span')
 
 	args = arg_parser.parse_args()
 
