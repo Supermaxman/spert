@@ -54,10 +54,10 @@ if __name__ == '__main__':
 	arg_parser.add_argument('--model_path', type=str, default='/shared/hltdir4/disk1/max/logs/spert/')
 	arg_parser.add_argument('--output_path', type=str, default='results/ade-overlap-results.json')
 	arg_parser.add_argument('--seed', type=str, default=1)
-	arg_parser.add_argument('--split', type=str, default=2)
+	arg_parser.add_argument('--split', type=str, default=1)
 	arg_parser.add_argument('--require_relations', type=bool, default=False)
 	arg_parser.add_argument(
-		'--correct_model_list', type=str, help="List of model which get sentence right.", default='')
+		'--correct_model_list', type=str, help="List of model which get sentence right.", default='ade-biobert')
 	arg_parser.add_argument(
 		'--incorrect_model_list', type=str, help="List of models which get sentence wrong.", default='')
 
@@ -83,8 +83,11 @@ if __name__ == '__main__':
 	correct_preds = [load_model_predictions(model_path, full_model_name) for full_model_name in correct_model_list]
 	incorrect_preds = [load_model_predictions(model_path, full_model_name) for full_model_name in incorrect_model_list]
 
+	# ex_iter = zip(labels, zip(*correct_preds), zip(*incorrect_preds))
+	ex_iter = zip(labels, zip(*correct_preds))
+
 	results = []
-	for label, correct_preds, incorrect_preds in zip(labels, zip(*correct_preds), zip(*incorrect_preds)):
+	for label, correct_preds in ex_iter:
 		match = True
 		if len(label['relations']) == 0 and require_relations:
 			continue
@@ -94,10 +97,6 @@ if __name__ == '__main__':
 			'label': label
 		}
 
-		for i_pred, i_name in zip(incorrect_preds, incorrect_model_list):
-			match = match and not compare(label, i_pred)
-			result[i_name] = i_pred
-			del i_pred['tokens']
 		for c_pred, c_name in zip(correct_preds, correct_model_list):
 			match = match and compare(label, c_pred)
 			result[c_name] = c_pred
