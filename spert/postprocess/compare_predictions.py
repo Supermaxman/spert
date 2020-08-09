@@ -79,7 +79,8 @@ if __name__ == '__main__':
 	# ex_iter = zip(labels, zip(*correct_preds), zip(*incorrect_preds))
 	ex_iter = zip(labels, zip(*incorrect_preds))
 	results = []
-	for label, correct_preds, incorrect_preds in ex_iter:
+	# for label, correct_preds, incorrect_preds in ex_iter:
+	for label, incorrect_preds in ex_iter:
 		match = True
 		if len(label['relations']) == 0 and require_relations:
 			continue
@@ -93,10 +94,10 @@ if __name__ == '__main__':
 			match = match and not compare(label, i_pred)
 			result[i_name] = i_pred
 			del i_pred['tokens']
-		for c_pred, c_name in zip(correct_preds, correct_model_list):
-			match = match and compare(label, c_pred)
-			result[c_name] = c_pred
-			del c_pred['tokens']
+		# for c_pred, c_name in zip(correct_preds, correct_model_list):
+		# 	match = match and compare(label, c_pred)
+		# 	result[c_name] = c_pred
+		# 	del c_pred['tokens']
 		if match:
 			results.append(result)
 
