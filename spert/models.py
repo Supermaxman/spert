@@ -1,7 +1,7 @@
 import torch
 from torch import nn as nn
 from transformers import BertConfig
-from transformers import BertModel
+from .attn_bert_models import BertModel
 from transformers import BertPreTrainedModel
 
 from spert import sampling
