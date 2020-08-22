@@ -45,7 +45,8 @@ class SpERTLoss(Loss):
             train_loss = entity_loss
 
         train_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self._model.parameters(), self._max_grad_norm)
+        if self._max_grad_norm is not None and self._max_grad_norm > 0:
+            torch.nn.utils.clip_grad_norm_(self._model.parameters(), self._max_grad_norm)
         self._optimizer.step()
         self._scheduler.step()
         self._model.zero_grad()
