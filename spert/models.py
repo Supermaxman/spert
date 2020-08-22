@@ -32,7 +32,7 @@ class SpERT(ElectraPreTrainedModel):
         super(SpERT, self).__init__(config)
 
         # BERT model
-        self.lm = ElectraModel(config)
+        self.electra = ElectraModel(config)
         self._pre_train = pre_train
 
         rel_layer = nn.Linear(config.hidden_size * 3 + size_embedding * 2, relation_types)
@@ -60,7 +60,7 @@ class SpERT(ElectraPreTrainedModel):
             print("Freeze transformer weights")
 
             # freeze all transformer weights
-            for param in self.lm.parameters():
+            for param in self.electra.parameters():
                 param.requires_grad = False
 
     def _rel_layer(self):
@@ -79,7 +79,7 @@ class SpERT(ElectraPreTrainedModel):
                        entity_sizes: torch.tensor, relations: torch.tensor, rel_masks: torch.tensor):
         # get contextualized token embeddings from last transformer layer
         context_masks = context_masks.float()
-        h = self.lm(input_ids=encodings, attention_mask=context_masks)[0]
+        h = self.electra(input_ids=encodings, attention_mask=context_masks)[0]
 
         batch_size = encodings.shape[0]
 
@@ -106,7 +106,7 @@ class SpERT(ElectraPreTrainedModel):
                       entity_sizes: torch.tensor, entity_spans: torch.tensor, entity_sample_masks: torch.tensor):
         # get contextualized token embeddings from last transformer layer
         context_masks = context_masks.float()
-        h = self.lm(input_ids=encodings, attention_mask=context_masks)[0]
+        h = self.electra(input_ids=encodings, attention_mask=context_masks)[0]
 
         batch_size = encodings.shape[0]
         ctx_size = context_masks.shape[-1]
