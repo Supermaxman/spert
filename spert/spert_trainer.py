@@ -7,8 +7,8 @@ from torch.nn import DataParallel
 from torch.optim import Optimizer
 import transformers
 from torch.utils.data import DataLoader
-from transformers import AdamW, BertConfig
-from transformers import BertTokenizer
+from transformers import AdamW, ElectraConfig
+from transformers import ElectraTokenizer
 
 from spert import models
 from spert import sampling
@@ -30,9 +30,10 @@ class SpERTTrainer(BaseTrainer):
         super().__init__(args)
 
         # byte-pair encoding
-        self._tokenizer = BertTokenizer.from_pretrained(args.tokenizer_path,
-                                                        do_lower_case=args.lowercase,
-                                                        cache_dir=args.cache_path)
+        self._tokenizer = ElectraTokenizer.from_pretrained(
+          args.tokenizer_path,
+          cache_dir=self.args.cache_path
+        )
 
         # path to export predictions to
         self._predictions_path = os.path.join(self._log_path, 'predictions_%s_epoch_%s.json')
@@ -71,7 +72,10 @@ class SpERTTrainer(BaseTrainer):
         model_class = models.get_model(self.args.model_type)
 
         # load model
-        config = BertConfig.from_pretrained(self.args.model_path, cache_dir=self.args.cache_path)
+        config = ElectraConfig.from_pretrained(
+          self.args.model_path,
+          cache_dir=self.args.cache_path
+        )
         util.check_version(config, model_class, self.args.model_path)
 
         config.spert_version = model_class.VERSION
@@ -152,7 +156,7 @@ class SpERTTrainer(BaseTrainer):
         # create model
         model_class = models.get_model(self.args.model_type)
 
-        config = BertConfig.from_pretrained(self.args.model_path, cache_dir=self.args.cache_path)
+        config = ElectraConfig.from_pretrained(self.args.model_path, cache_dir=self.args.cache_path)
         util.check_version(config, model_class, self.args.model_path)
 
         model = model_class.from_pretrained(

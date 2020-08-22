@@ -1,8 +1,8 @@
 import torch
 from torch import nn as nn
-from transformers import BertConfig
-from transformers import BertModel
-from transformers import BertPreTrainedModel
+from transformers import ElectraConfig
+from transformers import ElectraModel
+from transformers import ElectraPreTrainedModel
 
 from spert import sampling
 from spert import util
@@ -21,18 +21,18 @@ def get_token(h: torch.tensor, x: torch.tensor, token: int):
     return token_h
 
 
-class SpERT(BertPreTrainedModel):
+class SpERT(ElectraPreTrainedModel):
     """ Span-based model to jointly extract entities and relations """
 
     VERSION = '1.1'
 
-    def __init__(self, config: BertConfig, cls_token: int, relation_types: int, entity_types: int,
+    def __init__(self, config: ElectraConfig, cls_token: int, relation_types: int, entity_types: int,
                  size_embedding: int, prop_drop: float, freeze_transformer: bool, max_pairs: int = 100,
                  pre_train: bool = False):
         super(SpERT, self).__init__(config)
 
         # BERT model
-        self.bert = BertModel(config)
+        self.lm = ElectraModel(config)
         self._pre_train = pre_train
 
         rel_layer = nn.Linear(config.hidden_size * 3 + size_embedding * 2, relation_types)
@@ -60,7 +60,7 @@ class SpERT(BertPreTrainedModel):
             print("Freeze transformer weights")
 
             # freeze all transformer weights
-            for param in self.bert.parameters():
+            for param in self.lm.parameters():
                 param.requires_grad = False
 
     def _rel_layer(self):
@@ -79,7 +79,7 @@ class SpERT(BertPreTrainedModel):
                        entity_sizes: torch.tensor, relations: torch.tensor, rel_masks: torch.tensor):
         # get contextualized token embeddings from last transformer layer
         context_masks = context_masks.float()
-        h = self.bert(input_ids=encodings, attention_mask=context_masks)[0]
+        h = self.lm(input_ids=encodings, attention_mask=context_masks)[0]
 
         batch_size = encodings.shape[0]
 
@@ -106,7 +106,7 @@ class SpERT(BertPreTrainedModel):
                       entity_sizes: torch.tensor, entity_spans: torch.tensor, entity_sample_masks: torch.tensor):
         # get contextualized token embeddings from last transformer layer
         context_masks = context_masks.float()
-        h = self.bert(input_ids=encodings, attention_mask=context_masks)[0]
+        h = self.lm(input_ids=encodings, attention_mask=context_masks)[0]
 
         batch_size = encodings.shape[0]
         ctx_size = context_masks.shape[-1]
