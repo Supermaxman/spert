@@ -260,7 +260,7 @@ class Relation:
 
 class Document:
     def __init__(self, doc_id: int, tokens: List[Token], entities: List[Entity], relations: List[Relation],
-                 encoding: List[int]):
+                 encoding: List[int], max_span_size: int):
         self._doc_id = doc_id  # ID within the corresponding dataset
 
         self._tokens = tokens
@@ -269,6 +269,86 @@ class Document:
 
         # byte-pair document encoding including special tokens ([CLS] and [SEP])
         self._encoding = encoding
+
+        self._entity_spans = OrderedDict()
+        self._entity_span_types = []
+        self._entity_span_sizes = []
+        for e in self._entities:
+            self._entity_spans[e.span] = len(self._entity_spans)
+            self._entity_span_types.append(e.entity_type.index)
+            self._entity_span_sizes.append(len(e.tokens))
+        self._rel_spans = OrderedDict()
+        self._rel_span_types = []
+        for rel in self._relations:
+            s1, s2 = rel.head_entity.span, rel.tail_entity.span
+            self._rel_spans[(s1, s2)] = len(self._rel_spans)
+            self._rel_span_types.append(rel.relation_type)
+        token_count = len(self._encoding)
+        self._spans = []
+        self._span_sizes = []
+        self._neg_entity_spans = []
+        self._neg_entity_span_sizes = []
+        for size in range(1, max_span_size + 1):
+            for i in range(0, (token_count - size) + 1):
+                span = self.tokens[i:i + size].span
+                self._spans.append(span)
+                self._span_sizes.append(size)
+                if span not in self._entity_spans:
+                    self._neg_entity_spans.append(span)
+                    self._neg_entity_span_sizes.append(size)
+
+        self._neg_rel_spans = []
+        for i1, s1 in enumerate(self._entity_spans.keys()):
+            for i2, s2 in enumerate(self._entity_spans.keys()):
+                rev = (s2, s1)
+                rev_symmetric = rev in self._entity_spans and self._rel_span_types[self._rel_spans[rev]].symmetric
+
+                # do not add as negative relation sample:
+                # neg. relations from an entity to itself
+                # entity pairs that are related according to gt
+                # entity pairs whose reverse exists as a symmetric relation in gt
+                if s1 != s2 and (s1, s2) not in self._rel_spans and not rev_symmetric:
+                    self._neg_rel_spans.append((s1, s2))
+
+    @property
+    def rel_spans(self):
+        return self._rel_spans
+
+    @property
+    def rel_span_types(self):
+        return self._rel_span_types
+
+    @property
+    def neg_entity_spans(self):
+        return self._neg_entity_spans
+
+    @property
+    def entity_spans(self):
+        return self._entity_spans
+
+    @property
+    def entity_span_types(self):
+        return self._entity_span_types
+
+    @property
+    def spans(self):
+        return self._spans
+
+    @property
+    def span_sizes(self):
+        return self._span_sizes
+
+    @property
+    def neg_entity_span_sizes(self):
+        return self._neg_entity_span_sizes
+
+    @property
+    def entity_span_sizes(self):
+        return self._entity_span_sizes
+
+    @property
+    def neg_rel_spans(self):
+        return self._neg_rel_spans
 
     @property
     def doc_id(self):
@@ -366,7 +446,7 @@ class Dataset(TorchDataset):
         return token
 
     def create_document(self, tokens, entity_mentions, relations, doc_encoding) -> Document:
-        document = Document(self._doc_id, tokens, entity_mentions, relations, doc_encoding)
+        document = Document(self._doc_id, tokens, entity_mentions, relations, doc_encoding, self._max_span_size)
         self._documents[self._doc_id] = document
         self._doc_id += 1
 
@@ -391,10 +471,18 @@ class Dataset(TorchDataset):
         doc = self._documents[index]
 
         if self._mode == Dataset.TRAIN_MODE:
-            return sampling.create_train_sample(doc, self._neg_entity_count, self._neg_rel_count,
-                                                self._max_span_size, len(self._rel_types))
+            return sampling.create_train_sample(
+                doc,
+                self._neg_entity_count,
+                self._neg_rel_count,
+                self._max_span_size,
+                len(self._rel_types)
+            )
         else:
-            return sampling.create_eval_sample(doc, self._max_span_size)
+            return sampling.create_eval_sample(
+                doc,
+                self._max_span_size
+            )
 
     def switch_mode(self, mode):
         self._mode = mode

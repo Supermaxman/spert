@@ -133,8 +133,14 @@ class JsonInputReader(BaseInputReader):
 
     def read(self, dataset_paths):
         for dataset_label, dataset_path in dataset_paths.items():
-            dataset = Dataset(dataset_label, self._relation_types, self._entity_types, self._neg_entity_count,
-                              self._neg_rel_count, self._max_span_size)
+            dataset = Dataset(
+                dataset_label,
+                self._relation_types,
+                self._entity_types,
+                self._neg_entity_count,
+                self._neg_rel_count,
+                self._max_span_size
+            )
             self._parse_dataset(dataset_path, dataset)
             self._datasets[dataset_label] = dataset
 

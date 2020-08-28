@@ -11,60 +11,44 @@ def create_train_sample(doc, neg_entity_count: int, neg_rel_count: int, max_span
     context_size = len(encodings)
 
     # positive entities
-    pos_entity_spans, pos_entity_types, pos_entity_masks, pos_entity_sizes = [], [], [], []
-    for e in doc.entities:
-        pos_entity_spans.append(e.span)
-        pos_entity_types.append(e.entity_type.index)
-        pos_entity_masks.append(create_entity_mask(*e.span, context_size))
-        pos_entity_sizes.append(len(e.tokens))
+    pos_entity_types = doc.entity_span_types
+    pos_entity_sizes = doc.entity_span_sizes
+    pos_entity_masks = [create_entity_mask(span.span_start, span.span_end, context_size) for span in doc.entity_spans]
+
+    pos_rels = list(doc.rel_spans.keys())
+    pos_rel_types = doc.rel_span_types
 
     # positive relations
-    pos_rels, pos_rel_spans, pos_rel_types, pos_rel_masks = [], [], [], []
-    for rel in doc.relations:
-        s1, s2 = rel.head_entity.span, rel.tail_entity.span
-        pos_rels.append((pos_entity_spans.index(s1), pos_entity_spans.index(s2)))
-        pos_rel_spans.append((s1, s2))
-        pos_rel_types.append(rel.relation_type)
-        pos_rel_masks.append(create_rel_mask(s1, s2, context_size))
+    pos_rel_masks = [create_rel_mask(s1, s2, context_size) for (s1, s2) in pos_rels]
 
     # negative entities
-    neg_entity_spans, neg_entity_sizes = [], []
-    for size in range(1, max_span_size + 1):
-        for i in range(0, (token_count - size) + 1):
-            span = doc.tokens[i:i + size].span
-            if span not in pos_entity_spans:
-                neg_entity_spans.append(span)
-                neg_entity_sizes.append(size)
+    neg_entity_spans = doc.neg_entity_spans
+    neg_entity_sizes = doc.neg_entity_span_sizes
 
+    num_neg_entity_samples = min(len(neg_entity_spans), neg_entity_count)
     # sample negative entities
-    neg_entity_samples = random.sample(list(zip(neg_entity_spans, neg_entity_sizes)),
-                                       min(len(neg_entity_spans), neg_entity_count))
+    neg_entity_samples = random.sample(
+        list(zip(neg_entity_spans, neg_entity_sizes)),
+        num_neg_entity_samples
+    )
     neg_entity_spans, neg_entity_sizes = zip(*neg_entity_samples) if neg_entity_samples else ([], [])
 
-    neg_entity_masks = [create_entity_mask(*span, context_size) for span in neg_entity_spans]
+    neg_entity_masks = [create_entity_mask(span.span_start, span.span_end, context_size) for span in neg_entity_spans]
     neg_entity_types = [0] * len(neg_entity_spans)
 
     # negative relations
     # use only strong negative relations, i.e. pairs of actual (labeled) entities that are not related
-    neg_rel_spans = []
+    neg_rel_spans = doc.neg_rel_spans
 
-    for i1, s1 in enumerate(pos_entity_spans):
-        for i2, s2 in enumerate(pos_entity_spans):
-            rev = (s2, s1)
-            rev_symmetric = rev in pos_rel_spans and pos_rel_types[pos_rel_spans.index(rev)].symmetric
-
-            # do not add as negative relation sample:
-            # neg. relations from an entity to itself
-            # entity pairs that are related according to gt
-            # entity pairs whose reverse exists as a symmetric relation in gt
-            if s1 != s2 and (s1, s2) not in pos_rel_spans and not rev_symmetric:
-                neg_rel_spans.append((s1, s2))
-
+    num_neg_rel_samples = min(len(neg_rel_spans), neg_rel_count)
     # sample negative relations
-    neg_rel_spans = random.sample(neg_rel_spans, min(len(neg_rel_spans), neg_rel_count))
+    neg_rel_spans = random.sample(
+        neg_rel_spans,
+        num_neg_rel_samples
+    )
 
-    neg_rels = [(pos_entity_spans.index(s1), pos_entity_spans.index(s2)) for s1, s2 in neg_rel_spans]
-    neg_rel_masks = [create_rel_mask(*spans, context_size) for spans in neg_rel_spans]
+    neg_rels = [(doc.entity_spans[s1], doc.entity_spans[s2]) for s1, s2 in neg_rel_spans]
+    neg_rel_masks = [create_rel_mask(span.span_start, span.span_end, context_size) for span in neg_rel_spans]
     neg_rel_types = [0] * len(neg_rel_spans)
 
     # merge
@@ -131,16 +115,9 @@ def create_eval_sample(doc, max_span_size: int):
     context_size = len(encodings)
 
     # create entity candidates
-    entity_spans = []
-    entity_masks = []
-    entity_sizes = []
-
-    for size in range(1, max_span_size + 1):
-        for i in range(0, (token_count - size) + 1):
-            span = doc.tokens[i:i + size].span
-            entity_spans.append(span)
-            entity_masks.append(create_entity_mask(*span, context_size))
-            entity_sizes.append(size)
+    entity_spans = doc.spans
+    entity_masks = [create_entity_mask(span.span_start, span.span_end, context_size) for span in doc.spans]
+    entity_sizes = doc.span_sizes
 
     # create tensors
     # token indices

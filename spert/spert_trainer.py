@@ -19,6 +19,7 @@ from spert.input_reader import JsonInputReader, BaseInputReader
 from spert.loss import SpERTLoss, Loss
 from tqdm import tqdm
 from spert.trainer import BaseTrainer
+from typing import Type
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -30,9 +31,11 @@ class SpERTTrainer(BaseTrainer):
         super().__init__(args)
 
         # byte-pair encoding
-        self._tokenizer = BertTokenizer.from_pretrained(args.tokenizer_path,
-                                                        do_lower_case=args.lowercase,
-                                                        cache_dir=args.cache_path)
+        self._tokenizer = BertTokenizer.from_pretrained(
+          args.tokenizer_path,
+          do_lower_case=args.lowercase,
+          cache_dir=args.cache_path
+        )
 
         # path to export predictions to
         self._predictions_path = os.path.join(self._log_path, 'predictions_%s_epoch_%s.json')
@@ -40,7 +43,7 @@ class SpERTTrainer(BaseTrainer):
         # path to export relation extraction examples to
         self._examples_path = os.path.join(self._log_path, 'examples_%s_%s_epoch_%s.html')
 
-    def train(self, train_path: str, valid_path: str, types_path: str, input_reader_cls: BaseInputReader):
+    def train(self, train_path: str, valid_path: str, types_path: str, input_reader_cls: Type[BaseInputReader]):
         args = self.args
         train_label, valid_label = 'train', 'valid'
 
@@ -52,8 +55,14 @@ class SpERTTrainer(BaseTrainer):
         self._init_eval_logging(valid_label)
 
         # read datasets
-        input_reader = input_reader_cls(types_path, self._tokenizer, args.neg_entity_count,
-                                        args.neg_relation_count, args.max_span_size, self._logger)
+        input_reader = input_reader_cls(
+          types_path,
+          self._tokenizer,
+          args.neg_entity_count,
+          args.neg_relation_count,
+          args.max_span_size,
+          self._logger
+        )
         input_reader.read({train_label: train_path, valid_label: valid_path})
         self._log_datasets(input_reader)
 
@@ -71,7 +80,10 @@ class SpERTTrainer(BaseTrainer):
         model_class = models.get_model(self.args.model_type)
 
         # load model
-        config = BertConfig.from_pretrained(self.args.model_path, cache_dir=self.args.cache_path)
+        config = BertConfig.from_pretrained(
+          self.args.model_path,
+          cache_dir=self.args.cache_path
+        )
         util.check_version(config, model_class, self.args.model_path)
 
         config.spert_version = model_class.VERSION
@@ -101,13 +113,22 @@ class SpERTTrainer(BaseTrainer):
         optimizer_params = self._get_optimizer_params(model)
         optimizer = AdamW(optimizer_params, lr=args.lr, weight_decay=args.weight_decay, correct_bias=False)
         # create scheduler
-        scheduler = transformers.get_linear_schedule_with_warmup(optimizer,
-                                                                 num_warmup_steps=args.lr_warmup * updates_total,
-                                                                 num_training_steps=updates_total)
+        scheduler = transformers.get_linear_schedule_with_warmup(
+          optimizer,
+          num_warmup_steps=args.lr_warmup * updates_total,
+          num_training_steps=updates_total
+        )
         # create loss function
         rel_criterion = torch.nn.BCEWithLogitsLoss(reduction='none')
         entity_criterion = torch.nn.CrossEntropyLoss(reduction='none')
-        compute_loss = SpERTLoss(rel_criterion, entity_criterion, model, optimizer, scheduler, args.max_grad_norm)
+        compute_loss = SpERTLoss(
+          rel_criterion,
+          entity_criterion,
+          model,
+          optimizer,
+          scheduler,
+          args.max_grad_norm
+        )
 
         # eval validation set
         if args.init_eval:
@@ -125,15 +146,21 @@ class SpERTTrainer(BaseTrainer):
         # save final model
         extra = dict(epoch=args.epochs, updates_epoch=updates_epoch, epoch_iteration=0)
         global_iteration = args.epochs * updates_epoch
-        self._save_model(self._save_path, model, self._tokenizer, global_iteration,
-                         optimizer=optimizer if self.args.save_optimizer else None, extra=extra,
-                         include_iteration=False, name='final_model')
+        self._save_model(
+          self._save_path,
+          model,
+          self._tokenizer,
+          global_iteration,
+          optimizer=optimizer if self.args.save_optimizer else None,
+          extra=extra,
+          include_iteration=False, name='final_model'
+        )
 
         self._logger.info("Logged in: %s" % self._log_path)
         self._logger.info("Saved in: %s" % self._save_path)
         self._close_summary_writer()
 
-    def eval(self, dataset_path: str, types_path: str, input_reader_cls: BaseInputReader):
+    def eval(self, dataset_path: str, types_path: str, input_reader_cls: Type[BaseInputReader]):
         args = self.args
         dataset_label = 'test'
 
@@ -144,15 +171,22 @@ class SpERTTrainer(BaseTrainer):
         self._init_eval_logging(dataset_label)
 
         # read datasets
-        input_reader = input_reader_cls(types_path, self._tokenizer,
-                                        max_span_size=args.max_span_size, logger=self._logger)
+        input_reader = input_reader_cls(
+          types_path,
+          self._tokenizer,
+          max_span_size=args.max_span_size,
+          logger=self._logger
+        )
         input_reader.read({dataset_label: dataset_path})
         self._log_datasets(input_reader)
 
         # create model
         model_class = models.get_model(self.args.model_type)
 
-        config = BertConfig.from_pretrained(self.args.model_path, cache_dir=self.args.cache_path)
+        config = BertConfig.from_pretrained(
+          self.args.model_path,
+          cache_dir=self.args.cache_path
+        )
         util.check_version(config, model_class, self.args.model_path)
 
         model = model_class.from_pretrained(
@@ -183,8 +217,14 @@ class SpERTTrainer(BaseTrainer):
 
         # create data loader
         dataset.switch_mode(Dataset.TRAIN_MODE)
-        data_loader = DataLoader(dataset, batch_size=self.args.train_batch_size, shuffle=True, drop_last=True,
-                                 num_workers=self.args.sampling_processes, collate_fn=sampling.collate_fn_padding)
+        data_loader = DataLoader(
+          dataset,
+          batch_size=self.args.train_batch_size,
+          shuffle=True,
+          drop_last=True,
+          num_workers=self.args.sampling_processes,
+          collate_fn=sampling.collate_fn_padding
+        )
 
         model.zero_grad()
 
@@ -195,15 +235,24 @@ class SpERTTrainer(BaseTrainer):
             batch = util.to_device(batch, self._device)
 
             # forward step
-            entity_logits, rel_logits = model(encodings=batch['encodings'], context_masks=batch['context_masks'],
-                                              entity_masks=batch['entity_masks'], entity_sizes=batch['entity_sizes'],
-                                              relations=batch['rels'], rel_masks=batch['rel_masks'])
+            entity_logits, rel_logits = model(
+              encodings=batch['encodings'],
+              context_masks=batch['context_masks'],
+              entity_masks=batch['entity_masks'],
+              entity_sizes=batch['entity_sizes'],
+              relations=batch['rels'],
+              rel_masks=batch['rel_masks']
+            )
 
             # compute loss and optimize parameters
-            batch_loss = compute_loss.compute(entity_logits=entity_logits, rel_logits=rel_logits,
-                                              rel_types=batch['rel_types'], entity_types=batch['entity_types'],
-                                              entity_sample_masks=batch['entity_sample_masks'],
-                                              rel_sample_masks=batch['rel_sample_masks'])
+            batch_loss = compute_loss.compute(
+              entity_logits=entity_logits,
+              rel_logits=rel_logits,
+              rel_types=batch['rel_types'],
+              entity_types=batch['entity_types'],
+              entity_sample_masks=batch['entity_sample_masks'],
+              rel_sample_masks=batch['rel_sample_masks']
+            )
 
             # logging
             iteration += 1
@@ -223,14 +272,29 @@ class SpERTTrainer(BaseTrainer):
             model = model.module
 
         # create evaluator
-        evaluator = Evaluator(dataset, input_reader, self._tokenizer,
-                              self.args.rel_filter_threshold, self.args.no_overlapping, self._predictions_path,
-                              self._examples_path, self.args.example_count, epoch, dataset.label)
+        evaluator = Evaluator(
+          dataset,
+          input_reader,
+          self._tokenizer,
+          self.args.rel_filter_threshold,
+          self.args.no_overlapping,
+          self._predictions_path,
+          self._examples_path,
+          self.args.example_count,
+          epoch,
+          dataset.label
+        )
 
         # create data loader
         dataset.switch_mode(Dataset.EVAL_MODE)
-        data_loader = DataLoader(dataset, batch_size=self.args.eval_batch_size, shuffle=False, drop_last=False,
-                                 num_workers=self.args.sampling_processes, collate_fn=sampling.collate_fn_padding)
+        data_loader = DataLoader(
+          dataset,
+          batch_size=self.args.eval_batch_size,
+          shuffle=False,
+          drop_last=False,
+          num_workers=self.args.sampling_processes,
+          collate_fn=sampling.collate_fn_padding
+        )
 
         with torch.no_grad():
             model.eval()
@@ -242,10 +306,15 @@ class SpERTTrainer(BaseTrainer):
                 batch = util.to_device(batch, self._device)
 
                 # run model (forward pass)
-                result = model(encodings=batch['encodings'], context_masks=batch['context_masks'],
-                               entity_masks=batch['entity_masks'], entity_sizes=batch['entity_sizes'],
-                               entity_spans=batch['entity_spans'], entity_sample_masks=batch['entity_sample_masks'],
-                               evaluate=True)
+                result = model(
+                  encodings=batch['encodings'],
+                  context_masks=batch['context_masks'],
+                  entity_masks=batch['entity_masks'],
+                  entity_sizes=batch['entity_sizes'],
+                  entity_spans=batch['entity_spans'],
+                  entity_sample_masks=batch['entity_sample_masks'],
+                  evaluate=True
+                )
                 entity_clf, rel_clf, rels = result
 
                 # evaluate batch
@@ -253,8 +322,15 @@ class SpERTTrainer(BaseTrainer):
 
         global_iteration = epoch * updates_epoch + iteration
         ner_eval, rel_eval, rel_nec_eval = evaluator.compute_scores()
-        self._log_eval(*ner_eval, *rel_eval, *rel_nec_eval,
-                       epoch, iteration, global_iteration, dataset.label)
+        self._log_eval(
+          *ner_eval,
+          *rel_eval,
+          *rel_nec_eval,
+          epoch,
+          iteration,
+          global_iteration,
+          dataset.label
+        )
 
         if self.args.store_predictions and not self.args.no_overlapping:
             evaluator.store_predictions()
@@ -322,15 +398,31 @@ class SpERTTrainer(BaseTrainer):
         self._log_tensorboard(label, 'eval/rel_nec_f1_macro', rel_nec_f1_macro, global_iteration)
 
         # log to csv
-        self._log_csv(label, 'eval', ner_prec_micro, ner_rec_micro, ner_f1_micro,
-                      ner_prec_macro, ner_rec_macro, ner_f1_macro,
-
-                      rel_prec_micro, rel_rec_micro, rel_f1_micro,
-                      rel_prec_macro, rel_rec_macro, rel_f1_macro,
-
-                      rel_nec_prec_micro, rel_nec_rec_micro, rel_nec_f1_micro,
-                      rel_nec_prec_macro, rel_nec_rec_macro, rel_nec_f1_macro,
-                      epoch, iteration, global_iteration)
+        self._log_csv(
+          label,
+          'eval',
+          ner_prec_micro,
+          ner_rec_micro,
+          ner_f1_micro,
+          ner_prec_macro,
+          ner_rec_macro,
+          ner_f1_macro,
+          rel_prec_micro,
+          rel_rec_micro,
+          rel_f1_micro,
+          rel_prec_macro,
+          rel_rec_macro,
+          rel_f1_macro,
+          rel_nec_prec_micro,
+          rel_nec_rec_micro,
+          rel_nec_f1_micro,
+          rel_nec_prec_macro,
+          rel_nec_rec_macro,
+          rel_nec_f1_macro,
+          epoch,
+          iteration,
+          global_iteration
+        )
 
     def _log_datasets(self, input_reader):
         self._logger.info("Relation type count: %s" % input_reader.relation_type_count)
@@ -353,17 +445,21 @@ class SpERTTrainer(BaseTrainer):
         self._logger.info("Context size: %s" % input_reader.context_size)
 
     def _init_train_logging(self, label):
-        self._add_dataset_logging(label,
-                                  data={'lr': ['lr', 'epoch', 'iteration', 'global_iteration'],
-                                        'loss': ['loss', 'epoch', 'iteration', 'global_iteration'],
-                                        'loss_avg': ['loss_avg', 'epoch', 'iteration', 'global_iteration']})
+        self._add_dataset_logging(
+          label,
+          data={'lr': ['lr', 'epoch', 'iteration', 'global_iteration'],
+                'loss': ['loss', 'epoch', 'iteration', 'global_iteration'],
+                'loss_avg': ['loss_avg', 'epoch', 'iteration', 'global_iteration']}
+        )
 
     def _init_eval_logging(self, label):
-        self._add_dataset_logging(label,
-                                  data={'eval': ['ner_prec_micro', 'ner_rec_micro', 'ner_f1_micro',
-                                                 'ner_prec_macro', 'ner_rec_macro', 'ner_f1_macro',
-                                                 'rel_prec_micro', 'rel_rec_micro', 'rel_f1_micro',
-                                                 'rel_prec_macro', 'rel_rec_macro', 'rel_f1_macro',
-                                                 'rel_nec_prec_micro', 'rel_nec_rec_micro', 'rel_nec_f1_micro',
-                                                 'rel_nec_prec_macro', 'rel_nec_rec_macro', 'rel_nec_f1_macro',
-                                                 'epoch', 'iteration', 'global_iteration']})
+        self._add_dataset_logging(
+          label,
+          data={'eval': ['ner_prec_micro', 'ner_rec_micro', 'ner_f1_micro',
+                         'ner_prec_macro', 'ner_rec_macro', 'ner_f1_macro',
+                         'rel_prec_micro', 'rel_rec_micro', 'rel_f1_micro',
+                         'rel_prec_macro', 'rel_rec_macro', 'rel_f1_macro',
+                         'rel_nec_prec_micro', 'rel_nec_rec_micro', 'rel_nec_f1_micro',
+                         'rel_nec_prec_macro', 'rel_nec_rec_macro', 'rel_nec_f1_macro',
+                         'epoch', 'iteration', 'global_iteration']}
+        )
