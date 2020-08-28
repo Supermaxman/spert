@@ -6,7 +6,7 @@ for seed in {0..4}; do
     i2b2-$1 \
     configs/i2b2/i2b2-$1 \
     ${seed} \
-    /users/max/data/corpora/i2b2/2010/json/train.json \
-    /users/max/data/corpora/i2b2/2010/json/dev.json \
-    /users/max/data/corpora/i2b2/2010/json/test.json
+    data/i2b2/train.json \
+    data/i2b2/dev.json \
+    data/i2b2/test.json
 done

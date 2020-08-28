@@ -14,15 +14,15 @@ python spert.py train \
   --train_path=$4 \
   --valid_path=$5
 
-mv /users/max/data/models/spert/save/$1-$3-train/*/final_model /users/max/data/models/spert/save/$1-$3-train/final_model/
+mv saves/$1-$3-train/*/final_model saves/$1-$3-train/final_model/
 
 python spert.py eval \
  --label=$1-$3-eval \
  --config=$2-eval.conf \
  --seed=$3 \
- --model_path=/users/max/data/models/spert/save/$1-$3-train/final_model/ \
- --tokenizer_path=/users/max/data/models/spert/save/$1-$3-train/final_model/ \
+ --model_path=saves/$1-$3-train/final_model/ \
+ --tokenizer_path=saves/$1-$3-train/final_model/ \
  --dataset_path=$6
 
-mv /shared/hltdir4/disk1/max/logs/spert/$1-$3-eval/*/* /shared/hltdir4/disk1/max/logs/spert/$1-$3-eval/
-cp /shared/hltdir4/disk1/max/logs/spert/$1-$3-eval/eval_test.csv data/results/$1-$3-eval-test.csv
+mv logs/$1-$3-eval/*/* logs/$1-$3-eval/
+cp logs/$1-$3-eval/eval_test.csv data/results/$1-$3-eval-test.csv
