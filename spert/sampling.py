@@ -19,7 +19,7 @@ def create_train_sample(doc, neg_entity_count: int, neg_rel_count: int, max_span
     pos_rel_types = doc.rel_span_types
 
     # positive relations
-    pos_rel_masks = [create_rel_mask(s1, s2, context_size) for (s1, s2) in pos_rels]
+    pos_rel_masks = [create_rel_mask(*rel, context_size) for rel in pos_rels]
 
     # negative entities
     neg_entity_spans = doc.neg_entity_spans
@@ -48,7 +48,7 @@ def create_train_sample(doc, neg_entity_count: int, neg_rel_count: int, max_span
     )
 
     neg_rels = [(doc.entity_spans[s1], doc.entity_spans[s2]) for s1, s2 in neg_rel_spans]
-    neg_rel_masks = [create_rel_mask(span.span_start, span.span_end, context_size) for span in neg_rel_spans]
+    neg_rel_masks = [create_rel_mask(*span, context_size) for span in neg_rel_spans]
     neg_rel_types = [0] * len(neg_rel_spans)
 
     # merge
