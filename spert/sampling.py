@@ -13,7 +13,7 @@ def create_train_sample(doc, neg_entity_count: int, neg_rel_count: int, max_span
     # positive entities
     pos_entity_types = doc.entity_span_types
     pos_entity_sizes = doc.entity_span_sizes
-    pos_entity_masks = [create_entity_mask(span.span_start, span.span_end, context_size) for span in doc.entity_spans]
+    pos_entity_masks = [create_entity_mask(*span, context_size) for span in doc.entity_spans]
 
     pos_rels = list(doc.rel_spans.keys())
     pos_rel_types = doc.rel_span_types
@@ -33,7 +33,7 @@ def create_train_sample(doc, neg_entity_count: int, neg_rel_count: int, max_span
     )
     neg_entity_spans, neg_entity_sizes = zip(*neg_entity_samples) if neg_entity_samples else ([], [])
 
-    neg_entity_masks = [create_entity_mask(span.span_start, span.span_end, context_size) for span in neg_entity_spans]
+    neg_entity_masks = [create_entity_mask(*span, context_size) for span in neg_entity_spans]
     neg_entity_types = [0] * len(neg_entity_spans)
 
     # negative relations
