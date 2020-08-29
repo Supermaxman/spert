@@ -283,7 +283,7 @@ class Document:
             s1, s2 = rel.head_entity.span, rel.tail_entity.span
             self._rel_spans[(s1, s2)] = len(self._rel_spans)
             self._rel_span_types.append(rel.relation_type)
-        token_count = len(self._encoding)
+        token_count = len(self.tokens)
         self._spans = []
         self._span_sizes = []
         self._neg_entity_spans = []
