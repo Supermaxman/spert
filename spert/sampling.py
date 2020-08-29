@@ -57,6 +57,7 @@ def create_train_sample(doc, neg_entity_count: int, neg_rel_count: int, max_span
     entity_sizes = pos_entity_sizes + list(neg_entity_sizes)
 
     rels = pos_rels + neg_rels
+    print(type(rels))
     rel_types = [r.index for r in pos_rel_types] + neg_rel_types
     rel_masks = pos_rel_masks + neg_rel_masks
 
